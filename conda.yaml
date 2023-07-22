@@ -1,0 +1,13 @@
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - colored
+    - jupyter
+    - sodapy # https://github.com/xmunoz/sodapy
+    - tensorflow
+    - pandas
+    - numpy
+    - scikit-learn
