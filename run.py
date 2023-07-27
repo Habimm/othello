@@ -1,23 +1,24 @@
 from info import info
-from tensorflow import keras
-from tensorflow.keras import layers
-import numpy as np
+import numpy
 import othello_game.othello
+import pandas
 import random
-import tensorflow as tf
+import tensorflow
+import tensorflow.keras
+import tensorflow.tensorflow.keras.layers
 
 # Fix the sequence of random numbers.
 RANDOM_NUMBERS_SEQUENCE_NAME = 1
-np.random.seed(RANDOM_NUMBERS_SEQUENCE_NAME)
+numpy.random.seed(RANDOM_NUMBERS_SEQUENCE_NAME)
 random.seed(RANDOM_NUMBERS_SEQUENCE_NAME)
-tf.random.set_seed(RANDOM_NUMBERS_SEQUENCE_NAME)
+tensorflow.random.set_seed(RANDOM_NUMBERS_SEQUENCE_NAME)
 
 # Define the oracle neural network's architecture
-inputs = keras.Input(shape=(2, 8, 8)) # input shape is (8, 8, 2) - two 8x8 planes
-x = layers.Conv2D(32, (3, 3), activation='relu', data_format='channels_first')(inputs)
-x = layers.Flatten()(x) # Flatten the tensor for the Dense layer
-outputs = layers.Dense(1, activation='tanh')(x)
-model = keras.Model(inputs=inputs, outputs=outputs)
+inputs = tensorflow.keras.Input(shape=(2, 8, 8)) # input shape is (8, 8, 2) - two 8x8 planes
+x = tensorflow.tensorflow.keras.layers.Conv2D(32, (3, 3), activation='relu', data_format='channels_first')(inputs)
+x = tensorflow.tensorflow.keras.layers.Flatten()(x) # Flatten the tensor for the Dense layer
+outputs = tensorflow.tensorflow.keras.layers.Dense(1, activation='tanh')(x)
+model = tensorflow.keras.Model(inputs=inputs, outputs=outputs)
 model.summary()
 
 def decode_moves(moves):
@@ -33,20 +34,15 @@ def decode_moves(moves):
   tuples = [(move_number + 1, move_alpha, decode_move(move_alpha)) for move_number, move_alpha in enumerate(move_pairs)]
   return tuples
 
-# 1: Black
-# 0: Draw
-# -1: White
-game_name = '1050515'
-game_outcome = -1
-moves = 'd3c5f6f5e6e3d6f7b6d7e2c6d8c4e7c3f4c8c7d2d1a6b3f3b8f8b5f2e8a8b4b7a7a5g3f1g4g5h6a4g6e1b2c1c2h3h4g2g7h2h1a1g1b1a2a3h7h8g8h5'
-
 games = []
-with open('data/othello_dataset.csv') as dataset_file:
-  dataset_file.readline()
+with open('data/othello_dataset.csv') as othello_dataset_file:
+  othello_dataset_file.readline()
   i = 0
-  for line in dataset_file:
+  for line in othello_dataset_file:
     i += 1
-    if i > 2: break
+    if i > 200: break
+    # Remove the newline character at the end
+    line = line.strip()
     line = line.split(',')
     game = {
       "name": line[0],
@@ -55,93 +51,97 @@ with open('data/othello_dataset.csv') as dataset_file:
     }
     games.append(game)
 
-info(games)
-breakpoint()
+othello_actions = {
+  "Game": [],
+  "Step": [],
+  "Player": [],
+  "Move": [],
+  "Board": [],
+  "Real_Player_Outcome": [],
+}
 
-game = othello_game.othello.Othello()
-game.initialize_board()
-game.current_player = 0
-decoded_moves = decode_moves(moves)
+for game in games:
 
-all_othello_positions = []
-real_player_outcomes = []
-for move_number, move_alpha, move in decoded_moves:
+  # 1: Black
+  # 0: Draw
+  # -1: White
+  game_name = game["name"]
+  game_outcome = game["black_outcome"]
+  moves = game["moves"]
 
-  # initialize the new lists with zeros
-  black = [[0]*len(row) for row in game.board]
-  white = [[0]*len(row) for row in game.board]
+  game = othello_game.othello.Othello()
+  game.initialize_board()
+  game.current_player = 0
+  decoded_moves = decode_moves(moves)
 
-  # populate the new lists
-  for row_index in range(len(game.board)):
-    for col_index in range(len(game.board[row_index])):
-      if game.board[row_index][col_index] == 1:
-        black[row_index][col_index] = 1
-      elif game.board[row_index][col_index] == 2:
-        white[row_index][col_index] = 1
+  for move_number, move_alpha, move in decoded_moves:
 
-  current_player_name = None
-  if game.current_player == 0:
-    current_player_name = 'Black'
-    real_player_outcome = game_outcome
-    neural_network_input = [black, white]
-  if game.current_player == 1:
-    current_player_name = 'White'
-    real_player_outcome = -game_outcome
-    neural_network_input = [white, black]
-  if current_player_name is None:
-    raise ValueError("current_player_name is None")
+    # initialize the new lists with zeros
+    black = [[0]*len(row) for row in game.board]
+    white = [[0]*len(row) for row in game.board]
 
-  all_othello_positions.append(neural_network_input)
-  real_player_outcomes.append(real_player_outcome)
-  game.move = move
-  game.make_move()
-  game.current_player = 1 - game.current_player
-  if not game.has_legal_move():
+    # populate the new lists
+    for row_index in range(len(game.board)):
+      for col_index in range(len(game.board[row_index])):
+        if game.board[row_index][col_index] == 1:
+          black[row_index][col_index] = 1
+        elif game.board[row_index][col_index] == 2:
+          white[row_index][col_index] = 1
+
+    current_player_name = None
+    if game.current_player == 0:
+      current_player_name = 'Black'
+      real_player_outcome = game_outcome
+      neural_network_input = [black, white]
+    if game.current_player == 1:
+      current_player_name = 'White'
+      real_player_outcome = -game_outcome
+      neural_network_input = [white, black]
+    if current_player_name is None:
+      raise ValueError("current_player_name is None")
+
+    # Save this learnable piece of wisdom, containing an observation and an outcome
+    othello_actions["Game"].append(game_name)
+    othello_actions["Step"].append(move_number)
+    othello_actions["Player"].append(current_player_name)
+    othello_actions["Move"].append(move_alpha)
+    othello_actions["Board"].append(neural_network_input)
+    othello_actions["Real_Player_Outcome"].append(real_player_outcome)
+
+    # Prepare the next board
+    game.move = move
+    game.make_move()
     game.current_player = 1 - game.current_player
+    if not game.has_legal_move():
+      game.current_player = 1 - game.current_player
 
 
-model.compile(optimizer='adam', loss='mean_squared_error', metrics=[keras.metrics.MeanAbsoluteError()])
-model.fit(np.array(all_othello_positions), np.array(real_player_outcomes), epochs=1000)
-test_loss, test_acc = model.evaluate(all_othello_positions, real_player_outcomes)
-all_predicted_player_outcomes = model.predict(all_othello_positions)
 
-# ===================================================================================================================
+othello_actions_dataframe = pandas.DataFrame(othello_actions)
+othello_actions_dataframe.set_index(["Game", "Step"], inplace=True)
+othello_actions_dataframe.to_csv("othello_actions_dataframe.csv", sep=";")
+info(othello_actions_dataframe)
 
-game = othello_game.othello.Othello()
-game.initialize_board()
-game.current_player = 0
-decoded_moves = decode_moves(moves)
+othello_actions_dataframe_loaded = pandas.read_csv("othello_actions_dataframe.csv", sep=";", index_col=["Game", "Step"])
 
-print(f'Game, Step, Player, Move, Board, Real_Player_Outcome, Predicted_Player_Outcome')
-for (move_number, move_alpha, move), predicted_player_outcome in zip(decoded_moves, all_predicted_player_outcomes):
+model.compile(optimizer='adam', loss='mean_squared_error', metrics=[tensorflow.keras.metrics.MeanAbsoluteError()])
+batch_size = 64
+history = model.fit(othello_actions["Board"], othello_actions["Real_Player_Outcome"], batch_size=batch_size, epochs=1000)
+othello_actions_dataframe_loaded['Predicted_Player_Outcome'] = model.predict(othello_actions["Board"])
 
-  # initialize the new lists with zeros
-  black = [[0]*len(row) for row in game.board]
-  white = [[0]*len(row) for row in game.board]
+# Convert the history.history dict to a pandas DataFrame
+hist_df = pandas.DataFrame(history.history)
 
-  # populate the new lists
-  for row_index in range(len(game.board)):
-    for col_index in range(len(game.board[row_index])):
-      if game.board[row_index][col_index] == 1:
-        black[row_index][col_index] = 1
-      elif game.board[row_index][col_index] == 2:
-        white[row_index][col_index] = 1
+# Reset the DataFrame index to add iteration (epoch) numbers starting from 1
+hist_df.reset_index(inplace=True)
 
-  current_player_name = None
-  if game.current_player == 0:
-    current_player_name = 'Black'
-    real_player_outcome = game_outcome
-    neural_network_input = [black, white]
-  if game.current_player == 1:
-    current_player_name = 'White'
-    real_player_outcome = -game_outcome
-    neural_network_input = [white, black]
-  if current_player_name is None:
-    raise ValueError("current_player_name is None")
+# Rename the 'index' column to 'Epoch' (Epoch numbers start at 1, not 0)
+hist_df.rename(columns={'index': 'Epoch'}, inplace=True)
+hist_df['Epoch'] += 1
 
-  print(f'{game_name}, {move_number}, {current_player_name}, {move_alpha}, {neural_network_input}, {real_player_outcome}, {predicted_player_outcome}')
-  game.move = move
-  game.make_move()
-  game.current_player = 1 - game.current_player
-  if not game.has_legal_move():
-    game.current_player = 1 - game.current_player
+hist_df = hist_df.iloc[::-1]
+
+# Save it to csv
+hist_df.to_csv('training_history.csv', index=False)
+
+othello_actions_dataframe_loaded.to_csv("othello_actions_dataframe_with_pred.csv", sep=";")
