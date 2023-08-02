@@ -1,2 +1,4 @@
 .conda_environment
-othello_game
+data
+rules
+NBoard
