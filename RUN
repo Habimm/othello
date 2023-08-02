@@ -3,4 +3,6 @@
 true
 
 and conda activate ./.conda_environment
-and ipython3 run.py
+and rm -rf generated/
+and ipython3 decompose_games.py
+and ipython3 predict.py
