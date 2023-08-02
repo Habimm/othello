@@ -1,5 +1,6 @@
 from info import info
-import othello_game.othello
+import os
+import rules.othello
 import pandas
 
 def decode_moves(moves):
@@ -21,7 +22,7 @@ with open('data/othello_dataset.csv') as othello_dataset_file:
   i = 0
   for line in othello_dataset_file:
     i += 1
-    if i > 2: break
+    if i > 1: break
     # Remove the newline character at the end
     line = line.strip()
     line = line.split(',')
@@ -50,7 +51,7 @@ for game in games:
   game_outcome = game["black_outcome"]
   moves = game["moves"]
 
-  game = othello_game.othello.Othello()
+  game = rules.othello.Othello()
   game.initialize_board()
   game.current_player = 0
   decoded_moves = decode_moves(moves)
@@ -98,5 +99,7 @@ for game in games:
 
 othello_actions_dataframe = pandas.DataFrame(othello_actions)
 othello_actions_dataframe.set_index(["Game", "Step"], inplace=True)
-othello_actions_dataframe.to_csv("data/othello_prediction_prompts.csv", sep=";")
+if not os.path.exists("generated"):
+  os.mkdir("generated")
+othello_actions_dataframe.to_csv("generated/othello_prediction_prompts.csv", sep=";")
 info(othello_actions_dataframe)
