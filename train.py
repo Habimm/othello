@@ -1,3 +1,4 @@
+from info import info
 import ast
 import numpy
 import os
@@ -37,18 +38,6 @@ else:
 
 os.makedirs("generated/models/eOthello", exist_ok=True)
 
-# Save initial model before training begins
-filepath = "generated/models/eOthello/eOthello-{epoch}.keras"
-initial_save_path = filepath.replace('{epoch}', '0')
-model.save(initial_save_path)
-
-# Prepare callback to save model every 100 epochs
-checkpoint_callback = tensorflow.keras.callbacks.ModelCheckpoint(
-  filepath, monitor='loss', verbose=1,
-  save_best_only=False, save_weights_only=False,
-  mode='auto', save_freq='epoch', options=None
-)
-
 # Use ast.literal_eval to convert strings to lists, then convert lists to numpy arrays
 boards = othello_actions_dataframe['Board']
 boards = boards.apply(ast.literal_eval)
@@ -57,12 +46,43 @@ boards = boards.tolist()
 boards = numpy.array(boards)
 batch_size = 64
 epochs = 1_000
+filepath = "generated/models/eOthello/eOthello-{epoch}.keras"
 
-initial_loss, initial_accuracy = model.evaluate(
-  boards,
-  othello_actions_dataframe['Real_Player_Outcome'],
-  verbose=0
-)
+# Save model every 100 epochs
+class SaveModelsCallback(tensorflow.keras.callbacks.Callback):
+  def __init__(self):
+    super(SaveModelsCallback, self).__init__()
+
+  # Here, the model itself is before the epoch's updates.
+  # If you evaluate this model, you get the loss of the weights before this epoch's updates.
+  # The logs do not contain the loss at all.
+  def on_epoch_begin(self, epoch, logs=None):
+    if epoch % 100 == 0:
+      self.model.save(filepath.format(epoch=epoch))
+
+  # Here, the model itself is after the epoch's updates.
+  # If you evaluate this model, you get the loss of the weights after this epoch's updates.
+  # WARNING: The logs, however, contain the loss of the weights BEFORE the update.
+  # WARNING: THIS IS NOT EXPLICITLY DOCUMENTED ANYWHERE!
+  # This has been tested by comparing the loss in logs
+  # against the loss when the model was evaluated in 'on_epoch_begin'.
+  def on_epoch_end(self, epoch, logs=None):
+    if epoch == epochs - 1:
+      after_last_epoch = epoch + 1
+      readable_epoch = f'{after_last_epoch:_}'
+      self.model.save(filepath.format(epoch=readable_epoch))
+
+# Prepare callback to save model every 100 epochs
+checkpoint_callback = SaveModelsCallback()
+
+# WARNING: The history object from model.fit() contains losses starting from the loss
+# BEFORE the first epoch, then it progresses until the loss before the last epoch
+# The loss after the last epoch has to be computed separately.
+# Also, if you get the loss from logs['loss'] in the callback method on_epoch_end,
+# then you will also get the loss before the current epoch, not the loss after.
+# In this case, the documentation at
+# https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/Callback#on_epoch_end
+# is misleading.
 
 # Train the model with the new callback
 history = model.fit(
@@ -73,19 +93,24 @@ history = model.fit(
   callbacks=[checkpoint_callback]
 )
 
+final_loss, final_accuracy = model.evaluate(
+  boards,
+  othello_actions_dataframe['Real_Player_Outcome'],
+  verbose=0
+)
+
 # Save the loss dataframe to a CSV file
 history_df = pandas.DataFrame(history.history)
 history_df.reset_index(inplace=True)
 history_df.rename(columns={'index': 'epoch'}, inplace=True)
-history_df['epoch'] += 1
 
 # Create a DataFrame for initial metrics and append it to the history DataFrame
-initial_metrics_df = pandas.DataFrame({
-    'epoch': [0],
-    'loss': [initial_loss],
-    'mean_absolute_error': [initial_accuracy]
+final_metrics_df = pandas.DataFrame({
+    'epoch': [epochs],
+    'loss': [final_loss],
+    'mean_absolute_error': [final_accuracy]
 })
-history_df = pandas.concat([initial_metrics_df, history_df])
+history_df = pandas.concat([history_df, final_metrics_df])
 
 history_df = history_df.iloc[::-1]
 
