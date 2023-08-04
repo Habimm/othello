@@ -1,4 +1,4 @@
 .conda_environment
-data
-rules
+generated
 NBoard
+rules
