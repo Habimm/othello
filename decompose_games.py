@@ -51,7 +51,7 @@ for game in games:
   game_outcome = game["black_outcome"]
   moves = game["moves"]
 
-  game = rules.othello.Othello()
+  game = rules.othello.Othello(model_path=None)
   game.initialize_board()
   game.current_player = 0
   decoded_moves = decode_moves(moves)
