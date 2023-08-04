@@ -1,7 +1,5 @@
-from info import info
 import ast
 import numpy
-import numpy as np
 import pandas
 import random
 import tensorflow
@@ -17,22 +15,32 @@ numpy.random.seed(RANDOM_NUMBERS_SEQUENCE_NAME)
 random.seed(RANDOM_NUMBERS_SEQUENCE_NAME)
 tensorflow.random.set_seed(RANDOM_NUMBERS_SEQUENCE_NAME)
 
-# Define the oracle neural network's architecture
-inputs = tensorflow.keras.Input(shape=(2, 8, 8)) # input shape is (8, 8, 2) - two 8x8 planes
-x = tensorflow.keras.layers.Conv2D(32, (3, 3), activation='relu', data_format='channels_first')(inputs)
-x = tensorflow.keras.layers.Flatten()(x) # Flatten the tensor for the Dense layer
-outputs = tensorflow.keras.layers.Dense(1, activation='tanh')(x)
-model = tensorflow.keras.Model(inputs=inputs, outputs=outputs)
-model.summary()
-
-model.compile(optimizer='adam', loss='mean_squared_error', metrics=[tensorflow.keras.metrics.MeanAbsoluteError()])
-batch_size = 64
+# model_load_path = 'generated/othello_model.keras-1000.keras-1000.keras'
+# model_load_path = 'generated/othello_model.keras-1000.keras'
+model_load_path = 'generated/othello_model.keras'
+# model_load_path = None
+if not model_load_path:
+  # Define the oracle neural network's architecture
+  inputs = tensorflow.keras.Input(shape=(2, 8, 8)) # input shape is (8, 8, 2) - two 8x8 planes
+  x = tensorflow.keras.layers.Conv2D(32, (3, 3), activation='relu', data_format='channels_first')(inputs)
+  x = tensorflow.keras.layers.Flatten()(x) # Flatten the tensor for the Dense layer
+  outputs = tensorflow.keras.layers.Dense(1, activation='tanh')(x)
+  model = tensorflow.keras.Model(inputs=inputs, outputs=outputs)
+  model.summary()
+  model.compile(optimizer='adam', loss='mean_squared_error', metrics=[tensorflow.keras.metrics.MeanAbsoluteError()])
+else:
+  model = tensorflow.keras.models.load_model(model_load_path)
 
 # Use ast.literal_eval to convert strings to lists, then convert lists to numpy arrays
-boards = np.array(othello_actions_dataframe['Board'].apply(ast.literal_eval).apply(np.array).tolist())
-
-history = model.fit(boards, othello_actions_dataframe['Real_Player_Outcome'], batch_size=batch_size, epochs=1000)
-model.save('generated/othello_model.keras')
+boards = numpy.array(othello_actions_dataframe['Board'].apply(ast.literal_eval).apply(numpy.array).tolist())
+batch_size = 64
+epochs = 1000
+history = model.fit(boards, othello_actions_dataframe['Real_Player_Outcome'], batch_size=batch_size, epochs=epochs)
+if model_load_path:
+  model_save_path = f'{model_load_path}-{epochs}.keras'
+else:
+  model_save_path = f'generated/othello_model.keras'
+model.save(model_save_path)
 
 othello_actions_dataframe['Predicted_Player_Outcome'] = model.predict(boards)
 
