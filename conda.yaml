@@ -6,7 +6,8 @@ dependencies:
   - pip:
     - colored
     - jupyter
-    - tensorflow==2.13
-    - pandas
     - numpy
+    - pandas
+    - plotly
     - scikit-learn
+    - tensorflow==2.13
