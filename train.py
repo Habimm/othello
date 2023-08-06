@@ -1,5 +1,6 @@
 from info import info
 import ast
+import json
 import numpy
 import os
 import pandas
@@ -18,11 +19,7 @@ numpy.random.seed(RANDOM_NUMBERS_SEQUENCE_NAME)
 random.seed(RANDOM_NUMBERS_SEQUENCE_NAME)
 tensorflow.random.set_seed(RANDOM_NUMBERS_SEQUENCE_NAME)
 
-# model_load_path = 'generated/othello_model.keras-1000.keras-1000.keras'
-# model_load_path = 'generated/othello_model.keras-1000.keras'
-# model_load_path = 'generated/othello_model.keras'
 model_load_path = None
-
 # Check if the model load path exists
 if not model_load_path:
   # Define the oracle neural network's architecture
@@ -46,6 +43,7 @@ boards = boards.tolist()
 boards = numpy.array(boards)
 batch_size = 64
 epochs = 1_000
+num_epochs_per_checkpoint = 100
 filepath = "generated/models/eOthello/eOthello-{epoch}.keras"
 
 # Save model every 100 epochs
@@ -57,7 +55,7 @@ class SaveModelsCallback(tensorflow.keras.callbacks.Callback):
   # If you evaluate this model, you get the loss of the weights before this epoch's updates.
   # The logs do not contain the loss at all.
   def on_epoch_begin(self, epoch, logs=None):
-    if epoch % 100 == 0:
+    if epoch % num_epochs_per_checkpoint == 0:
       self.model.save(filepath.format(epoch=epoch))
 
   # Here, the model itself is after the epoch's updates.
@@ -116,3 +114,17 @@ history_df = history_df.iloc[::-1]
 
 # Save the dataframe to a CSV file
 history_df.to_csv('generated/training_history.csv', index=False)
+
+# Load the existing data from the JSON file
+with open('generated/parameters.json', 'r') as json_file:
+    data = json.load(json_file)
+
+# Add the new key-value pair
+data["training_epochs"] = epochs
+data["training_batch_size_per_step"] = batch_size
+data["num_epochs_per_checkpoint"] = num_epochs_per_checkpoint
+data["num_checkpoints"] = epochs // num_epochs_per_checkpoint + 1
+
+# Save the updated data back to the JSON file
+with open('generated/parameters.json', 'w') as json_file:
+    json.dump(data, json_file, indent=2)
