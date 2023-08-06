@@ -28,9 +28,10 @@ if __name__ == '__main__':
   model_load_paths.sort()
   play_directory = models_directory.replace('models', 'plays', 1)
   os.makedirs(play_directory, exist_ok=True)
+  num_plays_for_evaluation = 20
   for model_load_path in model_load_paths:
     play_save_path = model_load_path.replace('models', 'plays', 1)
-    for _ in range(20):
+    for _ in range(num_plays_for_evaluation):
       game = rules.othello.Othello(should_draw_tiles=False, model_path=model_load_path)
       game.draw_board()
       game.initialize_board()

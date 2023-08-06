@@ -1,7 +1,8 @@
 from info import info
+import json
 import os
-import rules.othello
 import pandas
+import rules.othello
 
 def decode_moves(moves):
   # split into pairs
@@ -16,13 +17,14 @@ def decode_moves(moves):
   tuples = [(move_number + 1, move_alpha, decode_move(move_alpha)) for move_number, move_alpha in enumerate(move_pairs)]
   return tuples
 
+num_games_for_supervised_training = 1
 games = []
 with open('data/othello_dataset.csv') as othello_dataset_file:
   othello_dataset_file.readline()
   i = 0
   for line in othello_dataset_file:
     i += 1
-    if i > 1: break
+    if i > num_games_for_supervised_training: break
     # Remove the newline character at the end
     line = line.strip()
     line = line.split(',')
@@ -103,3 +105,13 @@ if not os.path.exists("generated"):
   os.mkdir("generated")
 othello_actions_dataframe.to_csv("generated/othello_prediction_prompts.csv", sep=";")
 info(othello_actions_dataframe)
+
+# Data to be written to the JSON file
+data = {
+  "num_games_for_supervised_training": num_games_for_supervised_training,
+  "num_states": len(othello_actions_dataframe),
+}
+
+# Open a file for writing and save the data as JSON
+with open('generated/parameters.json', 'w') as json_file:
+  json.dump(data, json_file, indent=2)
