@@ -4,6 +4,8 @@ import os
 import pandas
 import rules.othello
 
+num_games_for_supervised_training = 4
+
 def decode_moves(moves):
   # split into pairs
   move_pairs = [moves[i:i+2].upper() for i in range(0, len(moves), 2)]
@@ -17,7 +19,6 @@ def decode_moves(moves):
   tuples = [(move_number + 1, move_alpha, decode_move(move_alpha)) for move_number, move_alpha in enumerate(move_pairs)]
   return tuples
 
-num_games_for_supervised_training = 1
 games = []
 with open('data/othello_dataset.csv') as othello_dataset_file:
   othello_dataset_file.readline()
