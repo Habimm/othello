@@ -5,16 +5,26 @@ import numpy
 import os
 import pandas
 import random
+import sys
 import tensorflow
 import tensorflow.keras
 import tensorflow.keras.callbacks
 import tensorflow.keras.layers
 
-batch_size = 64
-epochs = 1000
-generated_path = 'generated'
-num_epochs_per_checkpoint = 100
-RANDOM_NUMBERS_SEQUENCE_NAME = 1
+def get_env_variable(name):
+    value = os.environ.get(name)
+    if value is None:
+        print(f"Error: Environment variable {name} not set.")
+        sys.exit(1)
+    return value
+
+batch_size = int(get_env_variable('OTHELLO_BATCH_SIZE'))
+epochs = int(get_env_variable('OTHELLO_EPOCHS'))
+generated_path = get_env_variable('OTHELLO_GENERATED_PATH')
+num_epochs_per_checkpoint = int(get_env_variable('OTHELLO_NUM_EPOCHS_PER_CHECKPOINT'))
+RANDOM_NUMBERS_SEQUENCE_NAME = int(get_env_variable('OTHELLO_RANDOM_NUMBERS_SEQUENCE_NAME'))
+
+
 
 # Load the decomposed games data.
 othello_actions_dataframe = pandas.read_csv(
@@ -29,7 +39,7 @@ random.seed(RANDOM_NUMBERS_SEQUENCE_NAME)
 tensorflow.random.set_seed(RANDOM_NUMBERS_SEQUENCE_NAME)
 
 model_load_path = None
-# model_load_path = f'{generated_path}/models/eOthello/eOthello-1_000.keras'
+# model_load_path = f'{generated_path}/models/eOthello-1/1_000.keras'
 # Check if the model load path exists
 if not model_load_path:
   # Define the oracle neural network's architecture
@@ -40,12 +50,15 @@ if not model_load_path:
   model = tensorflow.keras.Model(inputs=inputs, outputs=outputs)
   model.summary()
   model.compile(optimizer='adam', loss='mean_squared_error', metrics=[tensorflow.keras.metrics.MeanAbsoluteError()])
-  filepath = f'{generated_path}/models/eOthello/eOthello-0.keras'
+  filepath = f'{generated_path}/models/eOthello-1/{{epoch}}.keras'
 else:
   model = tensorflow.keras.models.load_model(model_load_path)
   filepath = f'{model_load_path}-{{epoch}}.keras'
 
-os.makedirs(f'{generated_path}/models/eOthello', exist_ok=True)
+model_json_string = model.to_json()
+model_config_dict = json.loads(model_json_string)
+
+os.makedirs(f'{generated_path}/models/eOthello-1', exist_ok=True)
 
 # Use ast.literal_eval to convert strings to lists, then convert lists to numpy arrays
 boards = othello_actions_dataframe['Board']
@@ -151,6 +164,7 @@ data['num_epochs_per_checkpoint'] = num_epochs_per_checkpoint
 # + 1 because we also have the checkpoint at 0 epochs,
 # before training starts
 data['num_checkpoints'] = epochs // num_epochs_per_checkpoint + 1
+data['model_config_dict'] = model_config_dict
 
 # Save the updated data back to the JSON file
 with open(f'{generated_path}/parameters.json', 'w') as json_file:

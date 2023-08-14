@@ -3,8 +3,19 @@ import json
 import os
 import pandas
 import rules.othello
+import sys
 
-num_games_for_supervised_training = 4
+def get_env_variable(name):
+  value = os.environ.get(name)
+  if value is None:
+    print(f'Error: Environment variable {name} not set.')
+    sys.exit(1)
+  return value
+
+num_games_for_supervised_training = int(get_env_variable('OTHELLO_NUM_GAMES_FOR_SUPERVISED_TRAINING'))
+generated_path = get_env_variable('OTHELLO_GENERATED_PATH')
+
+
 
 def decode_moves(moves):
   # split into pairs
@@ -30,19 +41,19 @@ with open('data/othello_dataset.csv') as othello_dataset_file:
     line = line.strip()
     line = line.split(',')
     game = {
-      "name": line[0],
-      "black_outcome": int(line[1]),
-      "moves": line[2],
+      'name': line[0],
+      'black_outcome': int(line[1]),
+      'moves': line[2],
     }
     games.append(game)
 
 othello_actions = {
-  "Game": [],
-  "Step": [],
-  "Player": [],
-  "Move": [],
-  "Board": [],
-  "Real_Player_Outcome": [],
+  'Game': [],
+  'Step': [],
+  'Player': [],
+  'Move': [],
+  'Board': [],
+  'Real_Player_Outcome': [],
 }
 
 for game in games:
@@ -50,9 +61,9 @@ for game in games:
   # 1: Black
   # 0: Draw
   # -1: White
-  game_name = game["name"]
-  game_outcome = game["black_outcome"]
-  moves = game["moves"]
+  game_name = game['name']
+  game_outcome = game['black_outcome']
+  moves = game['moves']
 
   game = rules.othello.Othello(model_path=None)
   game.initialize_board()
@@ -83,15 +94,15 @@ for game in games:
       real_player_outcome = -game_outcome
       neural_network_input = [white, black]
     if current_player_name is None:
-      raise ValueError("current_player_name is None")
+      raise ValueError('current_player_name is None')
 
     # Save this learnable piece of wisdom, containing an observation and an outcome
-    othello_actions["Game"].append(game_name)
-    othello_actions["Step"].append(move_number)
-    othello_actions["Player"].append(current_player_name)
-    othello_actions["Move"].append(move_alpha)
-    othello_actions["Board"].append(neural_network_input)
-    othello_actions["Real_Player_Outcome"].append(real_player_outcome)
+    othello_actions['Game'].append(game_name)
+    othello_actions['Step'].append(move_number)
+    othello_actions['Player'].append(current_player_name)
+    othello_actions['Move'].append(move_alpha)
+    othello_actions['Board'].append(neural_network_input)
+    othello_actions['Real_Player_Outcome'].append(real_player_outcome)
 
     # Prepare the next board
     game.move = move
@@ -101,18 +112,18 @@ for game in games:
       game.current_player = 1 - game.current_player
 
 othello_actions_dataframe = pandas.DataFrame(othello_actions)
-othello_actions_dataframe.set_index(["Game", "Step"], inplace=True)
-if not os.path.exists("generated"):
-  os.mkdir("generated")
-othello_actions_dataframe.to_csv("generated/othello_prediction_prompts.csv", sep=";")
+othello_actions_dataframe.set_index(['Game', 'Step'], inplace=True)
+if not os.path.exists(f'{generated_path}'):
+  os.mkdir(f'{generated_path}')
+othello_actions_dataframe.to_csv(f'{generated_path}/othello_prediction_prompts.csv', sep=';')
 info(othello_actions_dataframe)
 
 # Data to be written to the JSON file
 data = {
-  "num_games_for_supervised_training": num_games_for_supervised_training,
-  "num_states": len(othello_actions_dataframe),
+  'num_games_for_supervised_training': num_games_for_supervised_training,
+  'num_states': len(othello_actions_dataframe),
 }
 
 # Open a file for writing and save the data as JSON
-with open('generated/parameters.json', 'w') as json_file:
+with open(f'{generated_path}/parameters.json', 'w') as json_file:
   json.dump(data, json_file, indent=2)

@@ -1,14 +1,22 @@
 from info import info
-import plotly.io as pio
-import json
 import json
 import numpy
 import os
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.io as pio
 import re
+import sys
 
-generated_path = 'generated_200_plays'
+def get_env_variable(name):
+    value = os.environ.get(name)
+    if value is None:
+        print(f"Error: Environment variable {name} not set.")
+        sys.exit(1)
+    return value
+
+generated_path = get_env_variable('OTHELLO_GENERATED_PATH')
+
 
 
 
@@ -24,11 +32,12 @@ def get_filepaths(directory):
 # Custom sorting function
 def sort_key(filepath):
     # Extract numbers from the filename, remove underscores, and convert to an integer
-    number = int(re.search(r'-([\d_]+)', filepath).group(1).replace('_', ''))
+    number = int(re.search(r'([\d_]+).keras', filepath).group(1).replace('_', ''))
     print(number)  # Assuming info() is a print for the sake of this example
     return number
 
-plays_directory = f'{generated_path}/plays/eOthello/'
+plays_directory = f'{generated_path}/plays/eOthello-1/'
+
 play_paths = get_filepaths(plays_directory)
 play_paths.sort(key=sort_key)
 
@@ -56,18 +65,14 @@ tournament_table = pd.DataFrame({
 
 # Save the DataFrame to a new CSV file
 tournament_table.to_csv(f'{generated_path}/winning_rates.csv', index=False)
+
 # ===================================================================================
 
 
 
 # Load the existing data from the JSON file
-with open('generated/parameters.json', 'r') as json_file:
+with open(f'{generated_path}/parameters.json', 'r') as json_file:
   parameters = json.load(json_file)
-
-num_epochs_per_checkpoint = parameters['num_epochs_per_checkpoint']
-num_checkpoints = parameters['num_checkpoints']
-checkpoint_epochs = [num_epochs_per_checkpoint for _ in range(num_checkpoints)]
-checkpoint_epochs = [sum(checkpoint_epochs[:i]) for i in range(num_checkpoints)]
 
 num_games_for_supervised_training = parameters['num_games_for_supervised_training']
 num_states = parameters['num_states']
@@ -76,14 +81,19 @@ training_batch_size_per_step = parameters['training_batch_size_per_step']
 # Read the saved CSV file
 tournament_table = pd.read_csv(f'{generated_path}/winning_rates.csv')
 
+
 # Extract epoch numbers from play_path for plotting
-tournament_table['epoch'] = tournament_table['play_path'].apply(lambda x: int(re.search(r'-([\d_]+)', x).group(1).replace('_', '')))
+tournament_table['epoch'] = tournament_table['play_path'].apply(lambda x: int(re.search(r'([\d_]+).keras', x).group(1).replace('_', '')))
 
 # Calculate winning rate
 tournament_table['percentage'] = tournament_table['number_of_wins'] / tournament_table['number_of_games']
 
+checkpoint_epochs = tournament_table['epoch'].tolist()
+info(checkpoint_epochs)
+
 # Read the data from the CSV file
 training_table = pd.read_csv(f'{generated_path}/training_history.csv')
+
 
 # Create the plot
 fig = go.Figure()
@@ -102,6 +112,7 @@ fig.add_trace(
 )
 
 # Extract winning rates for the given epochs
+assert all(epoch in tournament_table['epoch'].values for epoch in checkpoint_epochs), "All epochs in checkpoint_epochs should be present in tournament_table."
 bar_y_values = [tournament_table.loc[tournament_table['epoch'] == num_epochs, 'percentage'].iloc[0] for num_epochs in checkpoint_epochs]
 bigger = numpy.array(bar_y_values)*100
 
@@ -148,6 +159,6 @@ fig.update_layout(
 )
 
 # fig.show()
-fig.write_image("training_and_tournament.png", scale=4)
+# fig.write_image("training_and_tournament.png", scale=4)
 # pio.write_image(fig, 'training_and_tournament.svg')
-pio.write_html(fig, file='training_and_tournament.html', auto_open=True)
+pio.write_html(fig, file=f'{generated_path}/training_and_tournament.html', auto_open=True)
