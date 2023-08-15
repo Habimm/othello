@@ -11,7 +11,7 @@ config = {
   "batch_size": 64,
   "epochs": 1000,
   "num_epochs_per_checkpoint": 100,
-  "num_games_for_supervised_training": 1000,
+  "num_games_for_supervised_training": 10,
   "number_of_games": 20,
   "RANDOM_NUMBERS_SEQUENCE_NAME": 1
 }
