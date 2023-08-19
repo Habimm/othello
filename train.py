@@ -20,26 +20,26 @@ def get_env_variable(name):
 
 batch_size = int(get_env_variable('OTHELLO_BATCH_SIZE'))
 epochs = int(get_env_variable('OTHELLO_EPOCHS'))
-generated_path = get_env_variable('OTHELLO_GENERATED_PATH')
+output_path = get_env_variable('OTHELLO_OUTPUT_PATH')
 num_epochs_per_checkpoint = int(get_env_variable('OTHELLO_NUM_EPOCHS_PER_CHECKPOINT'))
-RANDOM_NUMBERS_SEQUENCE_NAME = int(get_env_variable('OTHELLO_RANDOM_NUMBERS_SEQUENCE_NAME'))
+random_seed = int(get_env_variable('OTHELLO_RANDOM_SEED'))
 
 
 
 # Load the decomposed games data.
 othello_actions_dataframe = pandas.read_csv(
-  f'{generated_path}/othello_prediction_prompts.csv',
+  f'{output_path}/othello_prediction_prompts.csv',
   sep=';',
   index_col=['Game', 'Step'],
 )
 
 # Fix the sequence of random numbers.
-numpy.random.seed(RANDOM_NUMBERS_SEQUENCE_NAME)
-random.seed(RANDOM_NUMBERS_SEQUENCE_NAME)
-tensorflow.random.set_seed(RANDOM_NUMBERS_SEQUENCE_NAME)
+numpy.random.seed(random_seed)
+random.seed(random_seed)
+tensorflow.random.set_seed(random_seed)
 
 model_load_path = None
-# model_load_path = f'{generated_path}/models/eOthello-1/1_000.keras'
+# model_load_path = f'{output_path}/models/eOthello-1/1_000.keras'
 # Check if the model load path exists
 if not model_load_path:
   # Define the oracle neural network's architecture
@@ -50,7 +50,7 @@ if not model_load_path:
   model = tensorflow.keras.Model(inputs=inputs, outputs=outputs)
   model.summary()
   model.compile(optimizer='adam', loss='mean_squared_error', metrics=[tensorflow.keras.metrics.MeanAbsoluteError()])
-  filepath = f'{generated_path}/models/eOthello-1/{{epoch}}.keras'
+  filepath = f'{output_path}/models/eOthello-1/{{epoch}}.keras'
 else:
   model = tensorflow.keras.models.load_model(model_load_path)
   filepath = f'{model_load_path}-{{epoch}}.keras'
@@ -58,7 +58,7 @@ else:
 model_json_string = model.to_json()
 model_config_dict = json.loads(model_json_string)
 
-os.makedirs(f'{generated_path}/models/eOthello-1', exist_ok=True)
+os.makedirs(f'{output_path}/models/eOthello-1', exist_ok=True)
 
 # Use ast.literal_eval to convert strings to lists, then convert lists to numpy arrays
 boards = othello_actions_dataframe['Board']
@@ -121,7 +121,7 @@ final_loss, final_accuracy = model.evaluate(
 # 1. Load the existing data from the CSV file
 # Try to load the existing data from the CSV file
 try:
-    existing_df = pandas.read_csv(f'{generated_path}/training_history.csv')
+    existing_df = pandas.read_csv(f'{output_path}/training_history.csv')
 except FileNotFoundError:
     # If the file doesn't exist, create an empty DataFrame with the expected columns
     existing_df = pandas.DataFrame(columns=['epoch', 'loss', 'mean_absolute_error'])
@@ -147,11 +147,11 @@ combined_df = pandas.concat([existing_df, history_df], ignore_index=True)
 combined_df = combined_df.iloc[::-1]
 
 # 3. Save the combined dataframe back to the CSV file
-combined_df.to_csv(f'{generated_path}/training_history.csv', index=False)
+combined_df.to_csv(f'{output_path}/training_history.csv', index=False)
 
 # Try to load the existing data from the JSON file
 try:
-  with open(f'{generated_path}/parameters.json', 'r') as json_file:
+  with open(f'{output_path}/parameters.json', 'r') as json_file:
     data = json.load(json_file)
 except FileNotFoundError:
   # If the file doesn't exist, initialize data as an empty dictionary
@@ -167,5 +167,5 @@ data['num_checkpoints'] = epochs // num_epochs_per_checkpoint + 1
 data['model_config_dict'] = model_config_dict
 
 # Save the updated data back to the JSON file
-with open(f'{generated_path}/parameters.json', 'w') as json_file:
+with open(f'{output_path}/parameters.json', 'w') as json_file:
   json.dump(data, json_file, indent=2)

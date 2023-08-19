@@ -15,7 +15,7 @@ def get_env_variable(name):
         sys.exit(1)
     return value
 
-generated_path = get_env_variable('OTHELLO_GENERATED_PATH')
+output_path = get_env_variable('OTHELLO_OUTPUT_PATH')
 
 
 
@@ -36,7 +36,7 @@ def sort_key(filepath):
     print(number)  # Assuming info() is a print for the sake of this example
     return number
 
-plays_directory = f'{generated_path}/plays/eOthello-1/'
+plays_directory = f'{output_path}/plays/eOthello-1/'
 
 play_paths = get_filepaths(plays_directory)
 play_paths.sort(key=sort_key)
@@ -64,14 +64,14 @@ tournament_table = pd.DataFrame({
 })
 
 # Save the DataFrame to a new CSV file
-tournament_table.to_csv(f'{generated_path}/winning_rates.csv', index=False)
+tournament_table.to_csv(f'{output_path}/winning_rates.csv', index=False)
 
 # ===================================================================================
 
 
 
 # Load the existing data from the JSON file
-with open(f'{generated_path}/parameters.json', 'r') as json_file:
+with open(f'{output_path}/parameters.json', 'r') as json_file:
   parameters = json.load(json_file)
 
 num_games_for_supervised_training = parameters['num_games_for_supervised_training']
@@ -79,7 +79,7 @@ num_states = parameters['num_states']
 training_batch_size_per_step = parameters['training_batch_size_per_step']
 
 # Read the saved CSV file
-tournament_table = pd.read_csv(f'{generated_path}/winning_rates.csv')
+tournament_table = pd.read_csv(f'{output_path}/winning_rates.csv')
 
 
 # Extract epoch numbers from play_path for plotting
@@ -92,7 +92,7 @@ checkpoint_epochs = tournament_table['epoch'].tolist()
 info(checkpoint_epochs)
 
 # Read the data from the CSV file
-training_table = pd.read_csv(f'{generated_path}/training_history.csv')
+training_table = pd.read_csv(f'{output_path}/training_history.csv')
 
 
 # Create the plot
@@ -115,6 +115,9 @@ fig.add_trace(
 assert all(epoch in tournament_table['epoch'].values for epoch in checkpoint_epochs), "All epochs in checkpoint_epochs should be present in tournament_table."
 bar_y_values = [tournament_table.loc[tournament_table['epoch'] == num_epochs, 'percentage'].iloc[0] for num_epochs in checkpoint_epochs]
 bigger = numpy.array(bar_y_values)*100
+
+info(checkpoint_epochs)
+info(bar_y_values)
 
 # Add the bar plot for Winning Rate
 fig.add_trace(
@@ -161,4 +164,4 @@ fig.update_layout(
 # fig.show()
 # fig.write_image("training_and_tournament.png", scale=4)
 # pio.write_image(fig, 'training_and_tournament.svg')
-pio.write_html(fig, file=f'{generated_path}/training_and_tournament.html', auto_open=True)
+pio.write_html(fig, file=f'{output_path}/training_and_tournament.html', auto_open=True)

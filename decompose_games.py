@@ -13,7 +13,7 @@ def get_env_variable(name):
   return value
 
 num_games_for_supervised_training = int(get_env_variable('OTHELLO_NUM_GAMES_FOR_SUPERVISED_TRAINING'))
-generated_path = get_env_variable('OTHELLO_GENERATED_PATH')
+output_path = get_env_variable('OTHELLO_OUTPUT_PATH')
 
 
 
@@ -113,10 +113,9 @@ for game in games:
 
 othello_actions_dataframe = pandas.DataFrame(othello_actions)
 othello_actions_dataframe.set_index(['Game', 'Step'], inplace=True)
-if not os.path.exists(f'{generated_path}'):
-  os.mkdir(f'{generated_path}')
-othello_actions_dataframe.to_csv(f'{generated_path}/othello_prediction_prompts.csv', sep=';')
-info(othello_actions_dataframe)
+
+os.makedirs(output_path, exist_ok=True)
+othello_actions_dataframe.to_csv(f'{output_path}/othello_prediction_prompts.csv', sep=';')
 
 # Data to be written to the JSON file
 data = {
@@ -125,5 +124,5 @@ data = {
 }
 
 # Open a file for writing and save the data as JSON
-with open(f'{generated_path}/parameters.json', 'w') as json_file:
+with open(f'{output_path}/parameters.json', 'w') as json_file:
   json.dump(data, json_file, indent=2)
