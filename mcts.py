@@ -2,8 +2,16 @@ from info import info
 import copy
 import math
 import numpy
+import os
 import rules.othello
 import tensorflow.keras.models
+
+def get_env_variable(name):
+  value = os.environ.get(name)
+  if value is None:
+    print(f'Error: Environment variable {name} not set.')
+    sys.exit(1)
+  return value
 
 def board_to_tensor(board, player):
     # initialize the new lists with zeros
@@ -24,29 +32,32 @@ def board_to_tensor(board, player):
         neural_network_input = [white, black]
     return neural_network_input
 
-model_path = 'generated_20230815222704/models/eOthello-1/1_000.keras'
-opponent_model = tensorflow.keras.models.load_model(model_path)
+output_path = get_env_variable('OTHELLO_OUTPUT_PATH')
 
-
-
-NUM_SIMULATIONS = 300
-c_puct = 0.35
-
+model_path = f'{output_path}/models/eOthello-1/1_000.keras'
+NUM_SIMULATIONS = 2
+c_puct = 4
 class Node:
 
-  def __init__(self, state, parent=None, move=None):
+  def __init__(self, state_to_be, parent=None, move=None):
+    self.state = rules.othello.Othello()
+    self.state.board = copy.deepcopy(state_to_be.board)
+    self.state.current_player = copy.deepcopy(state_to_be.current_player)
+    self.state.num_tiles = copy.deepcopy(state_to_be.num_tiles)
+
     self.accumulated_outcome = 0
     self.visits = 0
     self.probability = 1
-    self.state = state
     self.children = []
     self.move = move
     self.parent = parent
+    self.opponent_model = tensorflow.keras.models.load_model(model_path)
+    if parent is None:
+      self.moving_along = True
+    else:
+      self.moving_along = False
 
   def expand(self):
-    outcome = self.evaluate()
-    self.backpropagate(outcome)
-
     moves = self.state.get_legal_moves()
     for move in moves:
 
@@ -74,11 +85,16 @@ class Node:
     child_with_most_visits_move = child_with_most_visits.move
     return child_with_most_visits_move
 
-  def next_node(self, move):
+  def next_node(self, move, current_player):
+    self.state.current_player = current_player
+    self.expand()
     move_child = None
     for child in self.children:
       if child.move == move:
         move_child = child
+
+    assert move_child is not None, f"No child to make the move {move}. Expand first!"
+    move_child.moving_along = True
     return move_child
 
   def select(self):
@@ -93,41 +109,49 @@ class Node:
         best_child = child
 
     assert best_child is not None
-
     return best_child
 
   def evaluate(self):
     move_board_tensor = board_to_tensor(self.state.board, self.state.current_player)
-    evaluation = opponent_model.predict([move_board_tensor], verbose=0)
+    evaluation = self.opponent_model.predict([move_board_tensor], verbose=0)
     return evaluation[0][0]
 
   def simulate(self):
     node = self
     while node.children:
       node = node.select()
+    outcome = node.evaluate()
     node.expand()
+    node.backpropagate(outcome)
 
   def search(self):
     for _ in range(NUM_SIMULATIONS):
       self.simulate()
 
   def to_dot(self):
-    lines = ['digraph Tree {']
+      lines = ['digraph Tree {']
 
-    def traverse(node, parent_id=None):
-      node_id = f"node_{id(node)}"
-      node_label = f"average_outcome={node.accumulated_outcome / (node.visits + 1)}\naccumulated_outcome={node.accumulated_outcome}\nvisits={node.visits}\nprobability={node.probability}\nstate={node.state}"
-      lines.append(f'{node_id} [label="{node_label}"];')
+      def traverse(node, parent_id=None):
+          node_id = f"node_{id(node)}"
+          node_label = f"average_outcome={node.accumulated_outcome / (node.visits + 1)}\naccumulated_outcome={node.accumulated_outcome}\nvisits={node.visits}\nprobability={node.probability}\nstate={node.state}"
 
-      if parent_id:
-        lines.append(f'{parent_id} -> {node_id};')
+          # Conditional background coloring based on the 'moving_along' attribute
+          if hasattr(node, 'moving_along') and node.moving_along:
+              fillcolor = 'fillcolor="#FF000080", style="filled"'
+          else:
+              fillcolor = ''
 
-      for child in node.children:
-        traverse(child, node_id)
+          lines.append(f'{node_id} [label="{node_label}", {fillcolor}];')
 
-    traverse(self)
-    lines.append('}')
-    return '\n'.join(lines)
+          if parent_id:
+              lines.append(f'{parent_id} -> {node_id};')
+
+          for child in node.children:
+              traverse(child, node_id)
+
+      traverse(self)
+      lines.append('}')
+      return '\n'.join(lines)
 
   def _repr_helper(self, indent=0):
     # Represent current node
@@ -149,19 +173,3 @@ class Node:
 
   def __repr__(self):
     return self._repr_helper()
-
-
-
-initial_state = rules.othello.Othello()
-initial_state.initialize_board()
-root = Node(initial_state)
-root.search()
-next_move = root.best_move()
-info(next_move)
-node_after_root = root.next_node(next_move)
-info(node_after_root.state)
-node_after_root.search()
-
-# Write the dot string to a file
-with open('tree.dot', 'w') as f:
-    f.write(node_after_root.to_dot())
