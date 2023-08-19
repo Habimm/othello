@@ -11,8 +11,8 @@ config = {
   "num_epochs_per_checkpoint": 100,
   "num_games_for_supervised_training": 10,
   "number_of_games": 2,
-  # "output_path": 'generated_20230814012642_mcts',
-  "output_path": '{timestamp_of_now}',
+  "output_path": 'output/generated_20230814012642_mcts',
+  # "output_path": '{timestamp_of_now}',
   "random_seed": 42,
 }
 
