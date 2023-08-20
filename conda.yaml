@@ -5,6 +5,7 @@ dependencies:
   - pip
   - pip:
     - colored==2.2.3
+    - graphviz==0.20.1
     - jupyter==1.0.0
     - kaleido==0.2.1
     - numpy==1.24.3

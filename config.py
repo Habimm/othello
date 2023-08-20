@@ -7,13 +7,18 @@ timestamp_of_now = now.strftime("output/%Y%m%d%H%M%S")
 # 2. Configuration values from your JSON string
 config = {
   "batch_size": 64,
+
+  # Increase this to incentivize using explorative actions
+  "c_puct": 4,
+
   "epochs": 100,
   "num_epochs_per_checkpoint": 100,
   "num_games_for_supervised_training": 10,
+  "num_simulations": 3,
   "number_of_games": 2,
   "output_path": 'output/generated_20230814012642_mcts',
-  # "output_path": '{timestamp_of_now}',
   "random_seed": 42,
+  # "output_path": '{timestamp_of_now}',
 }
 
 # 3. Print fish shell commands to set the environment variables
