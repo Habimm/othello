@@ -173,6 +173,9 @@ class Node:
       else:
         fillcolor = ''
 
+      if node.is_final:
+        fillcolor = 'fillcolor="#00FF0080", style="filled"'
+
       lines.append(f'{node_id} [label="{node_label}", {fillcolor}];')
 
       if parent_id:
