@@ -1,6 +1,8 @@
 from info import info
 import csv
 import datetime
+import datetime
+import graphviz
 import multiprocessing
 import os
 import pandas
@@ -66,22 +68,26 @@ def play_games(model_load_path, num_plays_for_evaluation):
         moves.append(move)
       else:
         if other_player_has_a_move is False:
-          if game.num_tiles[0] > game.num_tiles[1]:
-            black_outcome = 1
-          elif game.num_tiles[0] < game.num_tiles[1]:
-            black_outcome = -1
-          else:
-            black_outcome = 0
+          black_outcome = game.get_black_outcome()
           break
         other_player_has_a_move = False
       game.current_player = 1 - game.current_player
       if not game.has_legal_move():
         game.current_player = 1 - game.current_player
 
+    # Loading the .dot string into Graphviz.
+    # See: https://graphviz.readthedocs.io/en/stable/examples.html
+    dot_string = initial_state_root.to_dot()
+    graphviz_source = graphviz.Source(dot_string)
+    graphviz_source.format = 'svg'
+
+    # This function will write TWO files:
+    # First, it writes the DOT file to the given path.
+    # Second, it writes the SVG file to the given path + ".svg".
     now = datetime.datetime.now()
     timestamp = now.strftime("output_%Y%m%d%H%M%S")
-    with open(f'{output_path}/mcts/{timestamp}.dot', 'w') as file:
-        file.write(initial_state_root.to_dot())
+    dot_file_path = f'{output_path}/mcts/{timestamp}.dot'
+    graphviz_source.render(filename=dot_file_path, view=False)
 
     assert black_outcome is not None
     translated_moves = [convert_index_to_chess_notation(move) for move in moves]
