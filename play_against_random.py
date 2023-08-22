@@ -113,6 +113,7 @@ def worker(job_queue, csv_filename):
 
     play_save_path = play_games(job, number_of_games)
     a = pandas.read_csv(play_save_path)
+    # The model plays White.
     number_of_wins = a[a['black_outcome'] == -1].shape[0]
     assert number_of_games == a.shape[0]
     update_csv(csv_filename, [play_save_path, number_of_wins, number_of_games])
