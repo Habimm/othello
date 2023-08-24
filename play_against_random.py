@@ -8,6 +8,7 @@ import os
 import pandas
 import random
 import rules.othello
+import subprocess
 import sys
 
 def get_env_variable(name):
@@ -81,13 +82,20 @@ def play_games(model_load_path, num_plays_for_evaluation):
     graphviz_source = graphviz.Source(dot_string)
     graphviz_source.format = 'svg'
 
-    # This function will write TWO files:
-    # First, it writes the DOT file to the given path.
-    # Second, it writes the SVG file to the given path + ".svg".
     now = datetime.datetime.now()
-    timestamp = now.strftime("output_%Y%m%d%H%M%S")
+    timestamp = now.strftime("%Y%m%d%H%M%S")
     dot_file_path = f'{output_path}/mcts/{timestamp}.dot'
-    graphviz_source.render(filename=dot_file_path, view=False)
+
+    # This render() function will write TWO files:
+    # First, it writes the DOT file to the given path.
+    # Second, it writes the SVG file to the given path, followed by ".svg".
+    try:
+      graphviz_source.render(filename=dot_file_path, view=False)
+    except subprocess.CalledProcessError:
+      # Sometimes, we get:
+      # subprocess.CalledProcessError: Command '[PosixPath('dot'), '-Kdot', '-Tsvg', '-O', '20230824090520.dot']' returned non-zero exit status 1.
+      # But the .svg file is created and is well-readable. So, we ignore all called process errors.
+      pass
 
     assert black_outcome is not None
     translated_moves = [convert_index_to_chess_notation(move) for move in moves]
@@ -133,7 +141,7 @@ def main():
 
   directory_path = f'{output_path}/models/eOthello-1/'
   model_load_paths = get_files_from_directory(directory_path)
-  num_processes = 1
+  num_processes = min(multiprocessing.cpu_count(), len(model_load_paths))
 
   job_queue = multiprocessing.Queue()
   for job in model_load_paths:

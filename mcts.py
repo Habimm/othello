@@ -1,9 +1,12 @@
 from info import info
 import copy
 import math
+import multiprocessing
 import numpy
 import os
+import requests
 import rules.othello
+import sys
 import tensorflow.keras.models
 
 def get_env_variable(name):
@@ -26,15 +29,17 @@ def board_to_tensor(board, player):
       elif board[row_index][col_index] == 2:
         white[row_index][col_index] = 1
 
+  assert player in [0, 1]
   if player == 0:
     neural_network_input = [black, white]
   if player == 1:
     neural_network_input = [white, black]
   return neural_network_input
 
-OUTPUT_PATH = get_env_variable('OTHELLO_OUTPUT_PATH')
-NUM_SIMULATIONS = int(get_env_variable('OTHELLO_NUM_SIMULATIONS'))
 C_PUCT = int(get_env_variable('OTHELLO_C_PUCT'))
+NUM_SIMULATIONS = int(get_env_variable('OTHELLO_NUM_SIMULATIONS'))
+OTHELLO_ORACLE_URL = get_env_variable('OTHELLO_ORACLE_URL')
+OUTPUT_PATH = get_env_variable('OTHELLO_OUTPUT_PATH')
 
 model_path = f'{OUTPUT_PATH}/models/eOthello-1/1_000.keras'
 class Node:
@@ -52,7 +57,6 @@ class Node:
     self.move = move
     self.parent = parent
     self.is_final = not self.state.has_legal_move()
-    self.opponent_model = tensorflow.keras.models.load_model(model_path)
     if parent is None:
       self.moving_along = True
     else:
@@ -136,7 +140,7 @@ class Node:
       black_outcome = self.state.get_black_outcome()
     else:
       move_board_tensor = board_to_tensor(self.state.board, self.state.current_player)
-      evaluation = self.opponent_model.predict([move_board_tensor], verbose=0)
+      evaluation = requests.post(OTHELLO_ORACLE_URL, json=move_board_tensor).json()
       current_outcome = evaluation[0][0]
       black_outcome = None
       if self.state.current_player == 0: black_outcome = current_outcome
@@ -158,7 +162,7 @@ class Node:
       self.simulate()
 
   def to_dot(self):
-    lines = ['digraph Tree {']
+    lines = ['digraph Othello_MonteCarloTreeSearch {']
 
     def traverse(node, parent_id=None):
       node_id = f"node_{id(node)}"
