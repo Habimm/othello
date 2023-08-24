@@ -1,5 +1,6 @@
 from info import info
 import ast
+import comet_ml
 import json
 import numpy
 import os
@@ -10,6 +11,16 @@ import tensorflow
 import tensorflow.keras
 import tensorflow.keras.callbacks
 import tensorflow.keras.layers
+
+# make ray ai for model deployment
+
+experiment = comet_ml.Experiment(
+    api_key="naHPlykXz5yy1LscJvnkLiyBJ",
+    project_name="Othello"
+)
+
+# Metrics from this training run will now be
+# available in the Comet UI
 
 def get_env_variable(name):
     value = os.environ.get(name)
