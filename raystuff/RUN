@@ -1,0 +1,9 @@
+#!/usr/bin/env fish
+
+true
+
+and conda activate ./.conda_environment
+and source (ipython ../config.py | psub)
+and env | grep OTHELLO
+and echo
+and ipython3 start.py
