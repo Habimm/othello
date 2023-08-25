@@ -1,4 +1,3 @@
-from info import info
 import copy
 import math
 import multiprocessing

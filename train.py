@@ -1,4 +1,3 @@
-from info import info
 import ast
 import comet_ml
 import json
@@ -54,8 +53,8 @@ model_load_path = None
 # Check if the model load path exists
 if not model_load_path:
   # Define the oracle neural network's architecture
-  inputs = tensorflow.keras.Input(shape=(2, 8, 8))
-  x = tensorflow.keras.layers.Conv2D(32, (3, 3), activation='relu', data_format='channels_first')(inputs)
+  inputs = tensorflow.keras.Input(shape=(8, 8, 2))
+  x = tensorflow.keras.layers.Conv2D(32, (3, 3), activation='relu', data_format='channels_last')(inputs)
   x = tensorflow.keras.layers.Flatten()(x)
   outputs = tensorflow.keras.layers.Dense(1, activation='tanh')(x)
   model = tensorflow.keras.Model(inputs=inputs, outputs=outputs)
@@ -77,6 +76,7 @@ boards = boards.apply(ast.literal_eval)
 boards = boards.apply(numpy.array)
 boards = boards.tolist()
 boards = numpy.array(boards)
+boards_nhwc = tf.transpose(boards, [0, 2, 3, 1])
 
 # Save model every `num_epochs_per_checkpoint` epochs
 class SaveModelsCallback(tensorflow.keras.callbacks.Callback):
@@ -116,7 +116,7 @@ checkpoint_callback = SaveModelsCallback()
 
 # Train the model with the new callback
 history = model.fit(
-  boards,
+  boards_nhwc,
   othello_actions_dataframe['Real_Player_Outcome'],
   batch_size=batch_size,
   epochs=epochs,
@@ -124,7 +124,7 @@ history = model.fit(
 )
 
 final_loss, final_accuracy = model.evaluate(
-  boards,
+  boards_nhwc,
   othello_actions_dataframe['Real_Player_Outcome'],
   verbose=0
 )

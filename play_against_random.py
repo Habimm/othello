@@ -1,4 +1,3 @@
-from info import info
 import csv
 import datetime
 import datetime
@@ -101,7 +100,6 @@ def play_game(model_load_path):
 def worker(job_queue):
   while True:
     model_load_path = job_queue.get()
-    info(model_load_path)
     if model_load_path is None:
       return
 

@@ -1,4 +1,3 @@
-from info import info
 import json
 import os
 import pandas

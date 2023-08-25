@@ -1,4 +1,3 @@
-from info import info
 import ray
 import ray.serve
 import starlette.requests
