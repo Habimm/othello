@@ -1,4 +1,5 @@
 from info import info
+import ray
 import ray.serve
 import starlette.requests
 import tensorflow
@@ -20,6 +21,8 @@ app = OracleDeployment.bind(oracle_path=oracle_path)
 
 # Deploy the application locally.
 ray.serve.run(app)
+
+ray.serve.run(OracleDeployment.options(num_replicas=8).bind(oracle_path=oracle_path))
 
 # This will keep the script running indefinitely
 try:
