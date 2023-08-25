@@ -5,23 +5,24 @@ import datetime
 import graphviz
 import multiprocessing
 import os
+import os
 import pandas
 import random
 import rules.othello
 import subprocess
 import sys
+import time
 
 def get_env_variable(name):
   value = os.environ.get(name)
   if value is None:
-    print(f"Error: Environment variable {name} not set.")
+    print(f'Error: Environment variable {name} not set.')
     sys.exit(1)
   return value
 
-output_path = get_env_variable('OTHELLO_OUTPUT_PATH')
-number_of_games = int(get_env_variable('OTHELLO_NUMBER_OF_GAMES'))
-
-
+OUTPUT_PATH = get_env_variable('OTHELLO_OUTPUT_PATH')
+NUMBER_OF_GAMES = int(get_env_variable('OTHELLO_NUMBER_OF_GAMES'))
+NUM_PROCESSES = int(get_env_variable('OTHELLO_NUM_PROCESSES'))
 
 def index_to_letter(index):
   return chr(index + ord('a')).upper()
@@ -32,142 +33,147 @@ def index_to_number(index):
 def convert_index_to_chess_notation(index_tuple):
   return index_to_letter(index_tuple[1]) + str(index_to_number(index_tuple[0]))
 
-def play_games(model_load_path, num_plays_for_evaluation):
-  play_save_path = f'{model_load_path.replace("models", "plays", 1)}.csv'
-
-  with open(play_save_path, 'w') as random_evaluation_file:
-    print('evaluation_game_id,model_load_path,baseline,black_outcome,game_moves', file=random_evaluation_file)
-
-  for _ in range(num_plays_for_evaluation):
-    game = rules.othello.Othello(should_draw_tiles=False, model_path=model_load_path)
-    game.draw_board()
-    game.initialize_board()
-    game.current_player = 0
-    other_player_has_a_move = True
-    moves = []
-    black_outcome = None
-    random_integer = random.randint(0, 100_000)
-    random_integer_str = str(random_integer).zfill(5)
-    game_id = f'{random_integer_str}'
-    initial_state_root = game.root
-    while True:
-      # Check if the player pointed at by `game.current_player` has a legal move.
-      # So, if there is a legal move from the current game state (board + player).
-      if game.has_legal_move():
-        other_player_has_a_move = True
-        move = None
-        if game.current_player == 0: # == BLACK PLAYER
-          # BLACK is random
-          move = game.make_random_move()
-          game.root = game.root.next_node(move, game.current_player)
-        if game.current_player == 1: # == WHITE PLAYER
-          # WHITE is trained
-          move = game.make_move_with_mcts(game.root)
-          game.root = game.root.next_node(move, game.current_player)
-        assert move is not None
-        print(move)
-        moves.append(move)
-      else:
-        if other_player_has_a_move is False:
-          black_outcome = game.get_black_outcome()
-          break
-        other_player_has_a_move = False
+def play_game(model_load_path):
+  game = rules.othello.Othello(should_draw_tiles=False, model_path=model_load_path)
+  game.draw_board()
+  game.initialize_board()
+  game.current_player = 0
+  other_player_has_a_move = True
+  moves = []
+  black_outcome = None
+  initial_state_root = game.root
+  while True:
+    # Check if the player pointed at by `game.current_player` has a legal move.
+    # So, if there is a legal move from the current game state (board + player).
+    if game.has_legal_move():
+      other_player_has_a_move = True
+      move = None
+      if game.current_player == 0: # == BLACK PLAYER
+        # BLACK is random
+        move = game.make_random_move()
+        game.root = game.root.next_node(move, game.current_player)
+      if game.current_player == 1: # == WHITE PLAYER
+        # WHITE is trained
+        move = game.make_move_with_mcts(game.root)
+        game.root = game.root.next_node(move, game.current_player)
+      assert move is not None
+      print(move)
+      moves.append(move)
+    else:
+      if other_player_has_a_move is False:
+        black_outcome = game.get_black_outcome()
+        break
+      other_player_has_a_move = False
+    game.current_player = 1 - game.current_player
+    if not game.has_legal_move():
       game.current_player = 1 - game.current_player
-      if not game.has_legal_move():
-        game.current_player = 1 - game.current_player
 
-    # Loading the .dot string into Graphviz.
-    # See: https://graphviz.readthedocs.io/en/stable/examples.html
-    dot_string = initial_state_root.to_dot()
-    graphviz_source = graphviz.Source(dot_string)
-    graphviz_source.format = 'svg'
+  for _ in range(5):
+    with multiprocessing.Lock():
+      # Loading the .dot string into Graphviz.
+      # See: https://graphviz.readthedocs.io/en/stable/examples.html
+      dot_string = initial_state_root.to_dot()
+      graphviz_source = graphviz.Source(dot_string)
+      graphviz_source.format = 'svg'
 
-    now = datetime.datetime.now()
-    timestamp = now.strftime("%Y%m%d%H%M%S")
-    dot_file_path = f'{output_path}/mcts/{timestamp}.dot'
+      now = datetime.datetime.now()
+      timestamp = now.strftime('%Y%m%d%H%M%S')
+      dot_file_path = f'{OUTPUT_PATH}/mcts/{timestamp}.dot'
 
-    # This render() function will write TWO files:
-    # First, it writes the DOT file to the given path.
-    # Second, it writes the SVG file to the given path, followed by ".svg".
-    try:
-      graphviz_source.render(filename=dot_file_path, view=False)
-    except subprocess.CalledProcessError:
-      # Sometimes, we get:
-      # subprocess.CalledProcessError: Command '[PosixPath('dot'), '-Kdot', '-Tsvg', '-O', '20230824090520.dot']' returned non-zero exit status 1.
-      # But the .svg file is created and is well-readable. So, we ignore all called process errors.
-      pass
+      # This render() function will write TWO files:
+      # First, it writes the DOT file to the given path.
+      # Second, it writes the SVG file to the given path, followed by '.svg'.
+      try:
+        graphviz_source.render(filename=dot_file_path, view=False)
+        break
+      except subprocess.CalledProcessError:
+        # Sometimes, we get:
+        # subprocess.CalledProcessError: Command '[PosixPath('dot'), '-Kdot', '-Tsvg', '-O', '20230824090520.dot']' returned non-zero exit status 1.
+        # But the .svg file is created and is well-readable. So, we ignore all called process errors.
+        # Der Fehler liegt daran, dass hier zwei Prozesse gleichzeitig laufen.
+        # Der eine
+        time.sleep(1)
+        pass
 
-    assert black_outcome is not None
+  assert black_outcome is not None
+  return black_outcome, moves
+
+def worker(job_queue):
+  while True:
+    model_load_path = job_queue.get()
+    info(model_load_path)
+    if model_load_path is None:
+      return
+
+    # The ", 1" is there to protect the model's name to not be changed (in case, the name contains "models").
+    play_path = model_load_path.replace('models', 'plays', 1)
+    play_path = f'{play_path}.csv'
+
+    # If the file does not exist yet, create one and put the headers in there.
+    if not os.path.exists(play_path):
+      with open(play_path, 'w') as random_evaluation_file:
+        print('evaluation_game_id,model_load_path,baseline,black_outcome,game_moves', file=random_evaluation_file)
+
+    black_outcome, moves = play_game(model_load_path)
+
+    random_integer = random.randint(0, 100_000)
+    game_id = str(random_integer).zfill(5)
+
     translated_moves = [convert_index_to_chess_notation(move) for move in moves]
     moves_concatenation = ''.join(translated_moves).lower()
+
     row = f'{game_id},{model_load_path},RANDOM_PLAYER,{black_outcome},{moves_concatenation}'
-    with open(play_save_path, 'a') as random_evaluation_file:
+    with open(play_path, 'a') as random_evaluation_file:
       print(row, file=random_evaluation_file)
-    print(f'Written row to {play_save_path}.')
-  return play_save_path
+      print(f'Written row to {play_path}.')
 
-# Update CSV in a thread-safe manner
-def update_csv(filename, data):
-  with multiprocessing.Lock():
-    with open(filename, 'a', newline='') as csvfile:
-      writer = csv.writer(csvfile)
-      writer.writerow(data)
-
-def worker(job_queue, csv_filename):
-  while True:
-    job = job_queue.get()
-    if job is None:
-      break
-
-    play_save_path = play_games(job, number_of_games)
-    a = pandas.read_csv(play_save_path)
-    # The model plays White.
-    number_of_wins = a[a['black_outcome'] == -1].shape[0]
-    assert number_of_games == a.shape[0]
-    update_csv(csv_filename, [play_save_path, number_of_wins, number_of_games])
-
-import os
 def get_files_from_directory(directory):
   return [os.path.join(directory, f) for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
 
-def main():
+if __name__ == '__main__':
   random.seed(1)
-  models_directory = f'{output_path}/models/eOthello-1/'
+  models_directory = f'{OUTPUT_PATH}/models/eOthello-1/'
   model_load_paths = get_files_from_directory(models_directory)
   model_load_paths.sort()
   play_directory = models_directory.replace('models', 'plays', 1)
   os.makedirs(play_directory, exist_ok=True)
-  os.makedirs(f'{output_path}/mcts', exist_ok=True)
+  os.makedirs(f'{OUTPUT_PATH}/mcts', exist_ok=True)
 
-  directory_path = f'{output_path}/models/eOthello-1/'
+  directory_path = f'{OUTPUT_PATH}/models/eOthello-1/'
   model_load_paths = get_files_from_directory(directory_path)
-  num_processes = min(multiprocessing.cpu_count(), len(model_load_paths))
 
   job_queue = multiprocessing.Queue()
-  for job in model_load_paths:
-    job_queue.put(job)
+  same_model_for_many_games = model_load_paths * NUMBER_OF_GAMES
+  same_model_for_many_games.sort()
+  for model_load_path in same_model_for_many_games:
+    job_queue.put(model_load_path)
 
   # Using sentinel values to tell processes when to exit
-  for _ in range(num_processes):
+  for _ in range(NUM_PROCESSES):
     job_queue.put(None)
 
-  csv_filename = f'{output_path}/winning_rates.csv'
-  # Initialize the CSV with headers
-  with open(csv_filename, 'w', newline='') as csvfile:
-    writer = csv.writer(csvfile)
-    writer.writerow(['play_path', 'number_of_wins', 'number_of_games'])
-
-  # draw yellow horizontal baseline in stories.py into the diagram
-  # play_games_against_random(number_of_games)
-
   processes = []
-  for _ in range(num_processes):
-    p = multiprocessing.Process(target=worker, args=(job_queue, csv_filename))
+  for _ in range(NUM_PROCESSES):
+    p = multiprocessing.Process(target=worker, args=(job_queue,))
     processes.append(p)
     p.start()
 
   for p in processes:
     p.join()
 
-if __name__ == "__main__":
-  main()
+  winning_rates_csv_path = f'{OUTPUT_PATH}/winning_rates.csv'
+  with open(winning_rates_csv_path, 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(['play_path', 'number_of_wins', 'number_of_games'])
+
+  play_paths = get_files_from_directory(play_directory)
+  for play_path in play_paths:
+    plays_table = pandas.read_csv(play_path)
+    # The oracle-led player controls White.
+    number_of_wins = plays_table[plays_table['black_outcome'] == -1].shape[0]
+    with open(winning_rates_csv_path, 'a', newline='') as csvfile:
+      writer = csv.writer(csvfile)
+      # actual_number_of_games might differ from NUMBER_OF_GAMES,
+      # if the plays directory wasn't empty, when the script ran.
+      actual_number_of_games = plays_table.shape[0]
+      writer.writerow([play_path, number_of_wins, actual_number_of_games])
