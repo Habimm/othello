@@ -70,13 +70,54 @@ model_config_dict = json.loads(model_json_string)
 
 os.makedirs(f'{output_path}/models/eOthello-1', exist_ok=True)
 
+
+
+
+
+
+
+
+
+
+
+
+
+# Save training parameter in a JSON file.
+# Try to load the existing data from the JSON file
+try:
+  with open(f'{output_path}/parameters.json', 'r') as json_file:
+    data = json.load(json_file)
+except FileNotFoundError:
+  # If the file doesn't exist, initialize data as an empty dictionary
+  data = {}
+
+# Add the new key-value pair
+data['training_epochs'] = epochs
+data['training_batch_size_per_step'] = batch_size
+data['num_epochs_per_checkpoint'] = num_epochs_per_checkpoint
+# + 1 because we also have the checkpoint at 0 epochs,
+# before training starts
+data['num_checkpoints'] = epochs // num_epochs_per_checkpoint + 1
+data['model_config_dict'] = model_config_dict
+
+# Save the updated data back to the JSON file
+with open(f'{output_path}/parameters.json', 'w') as json_file:
+  json.dump(data, json_file, indent=2)
+
+
+
+
+
+
+
+
 # Use ast.literal_eval to convert strings to lists, then convert lists to numpy arrays
 boards = othello_actions_dataframe['Board']
 boards = boards.apply(ast.literal_eval)
 boards = boards.apply(numpy.array)
 boards = boards.tolist()
 boards = numpy.array(boards)
-boards_nhwc = tf.transpose(boards, [0, 2, 3, 1])
+boards_nhwc = tensorflow.transpose(boards, [0, 2, 3, 1])
 
 # Save model every `num_epochs_per_checkpoint` epochs
 class SaveModelsCallback(tensorflow.keras.callbacks.Callback):
@@ -159,24 +200,3 @@ combined_df = combined_df.iloc[::-1]
 
 # 3. Save the combined dataframe back to the CSV file
 combined_df.to_csv(f'{output_path}/training_history.csv', index=False)
-
-# Try to load the existing data from the JSON file
-try:
-  with open(f'{output_path}/parameters.json', 'r') as json_file:
-    data = json.load(json_file)
-except FileNotFoundError:
-  # If the file doesn't exist, initialize data as an empty dictionary
-  data = {}
-
-# Add the new key-value pair
-data['training_epochs'] = epochs
-data['training_batch_size_per_step'] = batch_size
-data['num_epochs_per_checkpoint'] = num_epochs_per_checkpoint
-# + 1 because we also have the checkpoint at 0 epochs,
-# before training starts
-data['num_checkpoints'] = epochs // num_epochs_per_checkpoint + 1
-data['model_config_dict'] = model_config_dict
-
-# Save the updated data back to the JSON file
-with open(f'{output_path}/parameters.json', 'w') as json_file:
-  json.dump(data, json_file, indent=2)

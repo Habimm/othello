@@ -1,4 +1,3 @@
 .conda_environment
 NBoard
-output
-rules
+output*
