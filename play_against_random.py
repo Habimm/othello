@@ -1,4 +1,5 @@
 import csv
+import info
 import datetime
 import graphviz
 import mcts
@@ -19,6 +20,7 @@ def get_env_variable(name):
   return value
 
 OUTPUT_PATH = get_env_variable('OTHELLO_OUTPUT_PATH')
+OTHELLO_ORACLE_URL = get_env_variable('OTHELLO_ORACLE_URL')
 NUMBER_OF_GAMES = int(get_env_variable('OTHELLO_NUMBER_OF_GAMES'))
 NUM_PROCESSES = int(get_env_variable('OTHELLO_NUM_PROCESSES'))
 

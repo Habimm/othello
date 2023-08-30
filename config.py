@@ -17,9 +17,10 @@ config = {
   'num_simulations': 12,
   'number_of_games': 10,
   'oracle_url': 'http://localhost:8000/predict',
+  'output_path': 'output/20230828091759',
   # 'output_path': 'output/generated_20230814012642',
   # 'output_path': 'output/generated_20230814012642_mcts',
-  'output_path': '{timestamp_of_now}',
+  # 'output_path': '{timestamp_of_now}',
   'random_seed': 42,
 }
 

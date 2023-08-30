@@ -46,7 +46,6 @@ NUM_SIMULATIONS = int(get_env_variable('OTHELLO_NUM_SIMULATIONS'))
 OTHELLO_ORACLE_URL = get_env_variable('OTHELLO_ORACLE_URL')
 OUTPUT_PATH = get_env_variable('OTHELLO_OUTPUT_PATH')
 
-model_path = f'{OUTPUT_PATH}/models/eOthello-1/1_000.keras'
 class Node:
 
   def __init__(self, state_to_be, parent=None, move=None):
@@ -145,8 +144,16 @@ class Node:
       black_outcome = self.state.get_black_outcome()
     else:
       move_board_tensor = board_to_tensor(self.state.board, self.state.current_player)
-      evaluation = requests.post(OTHELLO_ORACLE_URL, json=move_board_tensor).json()
-      current_outcome = evaluation[0][0]
+      oracle_command = {
+        'board': move_board_tensor
+      }
+      evaluation = requests.post(OTHELLO_ORACLE_URL, json=oracle_command).json()
+      if evaluation['exception']:
+        info.d(evaluation)
+        info.d(evaluation['exception'])
+        sys.exit(1)
+      info.d(evaluation)
+      current_outcome = evaluation['prediction'][0][0]
       black_outcome = None
       if self.state.current_player == 0: black_outcome = current_outcome
       if self.state.current_player == 1: black_outcome = -current_outcome
