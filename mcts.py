@@ -1,4 +1,5 @@
 import copy
+import info
 import math
 import multiprocessing
 import numpy
@@ -6,7 +7,6 @@ import os
 import requests
 import rules.othello
 import sys
-import tensorflow.keras.models
 
 def get_env_variable(name):
   value = os.environ.get(name)
@@ -33,7 +33,13 @@ def board_to_tensor(board, player):
     neural_network_input = [black, white]
   if player == 1:
     neural_network_input = [white, black]
-  return neural_network_input
+
+  board_chw = neural_network_input
+  board_chw_np = numpy.array(board_chw)
+  board_hwc_np = board_chw_np.transpose(1, 2, 0)
+  board_hwc = board_hwc_np.tolist()
+
+  return board_hwc
 
 C_PUCT = int(get_env_variable('OTHELLO_C_PUCT'))
 NUM_SIMULATIONS = int(get_env_variable('OTHELLO_NUM_SIMULATIONS'))

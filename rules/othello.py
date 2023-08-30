@@ -7,15 +7,8 @@
 
 import copy
 import random
-import numpy
-import tensorflow.keras.models
+import rules.board
 import turtle
-import math
-from info import info
-
-import mcts
-import rules.score as score
-from rules.board import Board
 
 # Define all the possible directions in which a player's move can flip
 # their adversary's tiles as constant (0 – the current row/column,
@@ -55,14 +48,14 @@ def board_to_tensor(board, player):
 
 
 
-class Othello(Board):
+class Othello(rules.board.Board):
   ''' Othello class.
     Attributes: current_player, an integer 0 or 1 to represent two
           different players (the user and the computer)
           num_tiles, a list of integers for number of tiles each
           player has
           n, an integer for nxn board
-          all other attributes inherited from class Board
+          all other attributes inherited from class rules.board.Board
     n (integer) is optional in the __init__ function
     current_player, num_tiles and all other inherited attributes
     are not taken in the __init__
@@ -71,21 +64,18 @@ class Othello(Board):
          has_legal_move, get_legal_moves, is_legal_move,
          is_valid_coord, run, play, make_random_move,
          report_result, __str__ , __eq__ and all other methods
-         inherited from class Board
+         inherited from class rules.board.Board
   '''
 
-  def __init__(self, n = 8, should_draw_tiles=False, model_path=None):
+  def __init__(self, n = 8, should_draw_tiles=False):
     '''
       Initilizes the attributes.
       Only takes one optional parameter; others have default values.
     '''
-    Board.__init__(self, n, should_draw_tiles)
+    rules.board.Board.__init__(self, n, should_draw_tiles)
     self.current_player = 0
     self.num_tiles = [2, 2]
     self.should_draw_tiles = should_draw_tiles
-    self.opponent_model = None
-    if model_path:
-      self.opponent_model = tensorflow.keras.models.load_model(model_path)
 
   def initialize_board(self):
     ''' Method: initialize_board
@@ -109,10 +99,6 @@ class Othello(Board):
       self.board[row][col] = color + 1
       if self.should_draw_tiles:
         self.draw_tile(initial_squares[i], color)
-
-    if self.opponent_model:
-      self.root = mcts.Node(self)
-      self.root.expand()
 
   def make_move(self):
     ''' Method: make_move
@@ -310,8 +296,6 @@ class Othello(Board):
       print('-----------')
       self.report_result()
       name = input('Enter your name for posterity\n')
-      if not score.update_scores(name, self.num_tiles[0]):
-        print('Your score has not been saved.')
       print('Thanks for playing Othello!')
       close = input('Close the game screen? Y/N\n')
       if close == 'Y':
@@ -361,6 +345,8 @@ class Othello(Board):
     # These evaluate the outcome from the other player's perspective.
     # This means, that we want to this outcome ideally to be -1:
     # We want to MINIMIZE this outcome.
+    # WARNING: Das wird nicht funktionieren, da wir die Form der Eingabe für das neuronale Netzwerk
+    # geändert haben.
     evaluations = self.opponent_model.predict(move_board_tensors, verbose=0)
     move_index = evaluations.argmin()
     mapping = {}
@@ -420,7 +406,7 @@ class Othello(Board):
     num_tiles_str = '# of black tiles -- 1: ' + str(self.num_tiles[0]) + \
             '\n' + '# of white tiles -- 2: ' + \
             str(self.num_tiles[1]) + '\n'
-    board_str = Board.__str__(self)
+    board_str = rules.board.Board.__str__(self)
     printable_str = player_str + num_tiles_str + board_str
 
     return printable_str
@@ -431,5 +417,5 @@ class Othello(Board):
       Returns True if they have both the same board attribute and
       current player, False otherwise.
     '''
-    return Board.__eq__(self, other) and self.current_player == \
+    return rules.board.Board.__eq__(self, other) and self.current_player == \
     other.current_player

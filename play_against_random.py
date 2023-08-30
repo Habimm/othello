@@ -1,9 +1,8 @@
 import csv
 import datetime
-import datetime
 import graphviz
+import mcts
 import multiprocessing
-import os
 import os
 import pandas
 import random
@@ -33,14 +32,16 @@ def convert_index_to_chess_notation(index_tuple):
   return index_to_letter(index_tuple[1]) + str(index_to_number(index_tuple[0]))
 
 def play_game(model_load_path):
-  game = rules.othello.Othello(should_draw_tiles=False, model_path=model_load_path)
+  game = rules.othello.Othello(should_draw_tiles=False)
   game.draw_board()
   game.initialize_board()
   game.current_player = 0
   other_player_has_a_move = True
   moves = []
   black_outcome = None
-  initial_state_root = game.root
+  initial_state_root = mcts.Node(game)
+  initial_state_root.expand()
+  current_root = initial_state_root
   while True:
     # Check if the player pointed at by `game.current_player` has a legal move.
     # So, if there is a legal move from the current game state (board + player).
@@ -50,11 +51,11 @@ def play_game(model_load_path):
       if game.current_player == 0: # == BLACK PLAYER
         # BLACK is random
         move = game.make_random_move()
-        game.root = game.root.next_node(move, game.current_player)
+        current_root = current_root.next_node(move, game.current_player)
       if game.current_player == 1: # == WHITE PLAYER
         # WHITE is trained
-        move = game.make_move_with_mcts(game.root)
-        game.root = game.root.next_node(move, game.current_player)
+        move = game.make_move_with_mcts(current_root)
+        current_root = current_root.next_node(move, game.current_player)
       assert move is not None
       print(move)
       moves.append(move)

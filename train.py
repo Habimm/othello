@@ -1,4 +1,5 @@
 import ast
+import info
 import comet_ml
 import json
 import numpy
@@ -69,11 +70,6 @@ model_json_string = model.to_json()
 model_config_dict = json.loads(model_json_string)
 
 os.makedirs(f'{output_path}/models/eOthello-1', exist_ok=True)
-
-
-
-
-
 
 
 
