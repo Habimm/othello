@@ -1,20 +1,12 @@
+import config
+import info
 import json
 import os
 import pandas
 import rules.othello
-import sys
 
-def get_env_variable(name):
-  value = os.environ.get(name)
-  if value is None:
-    print(f'Error: Environment variable {name} not set.')
-    sys.exit(1)
-  return value
-
-num_games_for_supervised_training = int(get_env_variable('OTHELLO_NUM_GAMES_FOR_SUPERVISED_TRAINING'))
-output_path = get_env_variable('OTHELLO_OUTPUT_PATH')
-
-
+num_games_for_supervised_training = config.env('num_games_for_supervised_training')
+output_path = config.env('output_path')
 
 def decode_moves(moves):
   # split into pairs
@@ -64,7 +56,7 @@ for game in games:
   game_outcome = game['black_outcome']
   moves = game['moves']
 
-  game = rules.othello.Othello(model_path=None)
+  game = rules.othello.Othello()
   game.initialize_board()
   game.current_player = 0
   decoded_moves = decode_moves(moves)

@@ -1,7 +1,8 @@
+import config
 import csv
-import info
 import datetime
 import graphviz
+import info
 import mcts
 import multiprocessing
 import os
@@ -9,20 +10,11 @@ import pandas
 import random
 import rules.othello
 import subprocess
-import sys
 import time
 
-def get_env_variable(name):
-  value = os.environ.get(name)
-  if value is None:
-    print(f'Error: Environment variable {name} not set.')
-    sys.exit(1)
-  return value
-
-OUTPUT_PATH = get_env_variable('OTHELLO_OUTPUT_PATH')
-OTHELLO_ORACLE_URL = get_env_variable('OTHELLO_ORACLE_URL')
-NUMBER_OF_GAMES = int(get_env_variable('OTHELLO_NUMBER_OF_GAMES'))
-NUM_PROCESSES = int(get_env_variable('OTHELLO_NUM_PROCESSES'))
+NUM_PROCESSES = config.env('num_processes')
+NUMBER_OF_GAMES = config.env('number_of_games')
+OUTPUT_PATH = config.env('output_path')
 
 def index_to_letter(index):
   return chr(index + ord('a')).upper()
