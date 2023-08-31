@@ -48,12 +48,13 @@ OUTPUT_PATH = get_env_variable('OTHELLO_OUTPUT_PATH')
 
 class Node:
 
-  def __init__(self, state_to_be, parent=None, move=None):
+  def __init__(self, model_load_path, state_to_be, parent=None, move=None):
     self.state = rules.othello.Othello()
     self.state.board = copy.deepcopy(state_to_be.board)
     self.state.current_player = copy.deepcopy(state_to_be.current_player)
     self.state.num_tiles = copy.deepcopy(state_to_be.num_tiles)
 
+    self.model_load_path = model_load_path
     self.accumulated_relative_outcome = 0
     self.visits = 0
     self.probability = 1
@@ -86,7 +87,7 @@ class Node:
         # then this next state is a final state of the game.
         # In this case, the Node() constructor will set self.is_final to True.
 
-      child = Node(next_state, self, move)
+      child = Node(self.model_load_path, next_state, self, move)
       self.children.append(child)
 
   def backpropagate(self, black_outcome):
@@ -106,7 +107,6 @@ class Node:
     return child_with_most_visits_move
 
   def next_node(self, move, current_player):
-    self.state.current_player = current_player
     move_child = None
     for child in self.children:
       if child.move == move:
@@ -145,7 +145,8 @@ class Node:
     else:
       move_board_tensor = board_to_tensor(self.state.board, self.state.current_player)
       oracle_command = {
-        'board': move_board_tensor
+        'board': move_board_tensor,
+        'model_load_path': self.model_load_path,
       }
       evaluation = requests.post(OTHELLO_ORACLE_URL, json=oracle_command).json()
       if evaluation['exception']:

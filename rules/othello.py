@@ -359,7 +359,6 @@ class Othello(rules.board.Board):
     return self.move
 
   def make_move_with_mcts(self, current_tree_node):
-    current_tree_node.state.current_player = self.current_player
     current_tree_node.search()
     next_move = current_tree_node.best_move()
     self.move = next_move

@@ -41,7 +41,7 @@ def play_game(model_load_path):
   other_player_has_a_move = True
   moves = []
   black_outcome = None
-  initial_state_root = mcts.Node(game)
+  initial_state_root = mcts.Node(model_load_path, game)
   initial_state_root.expand()
   current_root = initial_state_root
   while True:

@@ -1,69 +1,78 @@
 import info
-import os
-import threading
 import json
 import numpy
+import os
 import ray.serve
 import redis
 import starlette.requests
+import sys
 import tensorflow
 import time
 import typing
 
+def get_env_variable(name):
+  value = os.environ.get(name)
+  if value is None:
+    print(f'Error: Environment variable {name} not set.')
+    sys.exit(1)
+  return value
+
+OUTPUT_PATH = get_env_variable('OTHELLO_OUTPUT_PATH')
+
 @ray.serve.deployment(route_prefix='/predict')
 class OracleDeployment:
-  def __init__(self, oracle_path: str):
-    self.oracle = tensorflow.keras.models.load_model(oracle_path)
+  def __init__(self, model_load_paths: str):
+    self.oracles = {}
+    for model_load_path in model_load_paths:
+      self.oracles[model_load_path] = tensorflow.keras.models.load_model(model_load_path)
     self.redis_store = redis.StrictRedis(host='localhost', port=6379, db=0)
+    self.redis_store.flushdb()
 
   async def __call__(self, request: starlette.requests.Request) -> typing.Dict:
     try:
       oracle_command = await request.json()
 
-      if 'board' in oracle_command:
-        board = oracle_command['board']
+      assert 'board' in oracle_command
+      assert 'model_load_path' in oracle_command
 
-        # Try to retrieve from Redis cache.
-        cache_key = json.dumps(board)
-        cache_key = cache_key.encode('utf-8')
-        cached_prediction = self.redis_store.get(cache_key)
-        if cached_prediction:
-          cached_prediction = numpy.frombuffer(cached_prediction, dtype=numpy.float32)
-          cached_prediction = cached_prediction.reshape(1, 1)
-          assert cached_prediction.shape == (1, 1), 'Assertion failed: cached_prediction.shape == (1, 1)'
-          return {'exception': None, 'prediction': cached_prediction}
+      board = oracle_command['board']
+      model_load_path = oracle_command['model_load_path']
 
-        assert self.oracle is not None, 'Assertion failed: self.oracle is not None'
-        prediction = self.oracle.predict([board], verbose=0)
+      # Try to retrieve from Redis cache.
+      cache_key = json.dumps(board)
+      cache_key = cache_key.encode('utf-8')
+      cached_prediction = self.redis_store.get(cache_key)
+      if cached_prediction:
+        cached_prediction = numpy.frombuffer(cached_prediction, dtype=numpy.float32)
+        cached_prediction = cached_prediction.reshape(1, 1)
+        assert cached_prediction.shape == (1, 1), 'Assertion failed: cached_prediction.shape == (1, 1)'
+        return {'exception': None, 'prediction': cached_prediction}
 
-        # Commit to Redis cache.
-        cached_prediction = prediction.tobytes()
-        self.redis_store.set(cache_key, cached_prediction)
+      assert model_load_path in self.oracles, 'Assertion failed: model_load_path in self.oracles'
+      prediction = self.oracles[model_load_path].predict([board], verbose=0)
 
-        assert prediction.shape == (1, 1), 'Assertion failed: prediction.shape == (1, 1)'
-        return {'exception': None, 'prediction': prediction}
+      # Commit to Redis cache.
+      cached_prediction = prediction.tobytes()
+      self.redis_store.set(cache_key, cached_prediction)
 
-      if 'path' in oracle_command:
-        oracle_path = oracle_command['path']
-        self.redis_store.flushdb()
-        # self.oracle = tensorflow.keras.models.load_model(oracle_path)
-        return {'exception': None}
+      assert prediction.shape == (1, 1), 'Assertion failed: prediction.shape == (1, 1)'
+      return {'exception': None, 'prediction': prediction}
 
     except Exception as e:
-      process_id = os.getpid()
-      thread_name = threading.current_thread().name
       return {
         'exception': f'{e}',
-        'process_id': process_id,
-        'thread_name': thread_name
       }
 
-oracle_path = "/home/dimitri/code/othello/output/20230828091759/models/eOthello-1/100.keras"
-app = OracleDeployment.bind(oracle_path=oracle_path)
+def get_files_from_directory(directory):
+  return [os.path.join(directory, f) for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+
+models_directory = f'{OUTPUT_PATH}/models/eOthello-1/'
+model_load_paths = get_files_from_directory(models_directory)
+app = OracleDeployment.bind(model_load_paths=model_load_paths)
 
 # Deploy the application locally.
 ray.serve.run(app)
-ray.serve.run(OracleDeployment.options(num_replicas=8).bind(oracle_path=oracle_path))
+ray.serve.run(OracleDeployment.options(num_replicas=8).bind(model_load_paths=model_load_paths))
 
 # This will keep the script running indefinitely
 try:
