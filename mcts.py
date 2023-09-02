@@ -1,5 +1,5 @@
 import copy
-import info
+import variables_info
 import math
 import multiprocessing
 import numpy
@@ -96,7 +96,7 @@ class Node:
     assert self.state.current_player in [0, 1], "When accumulating relative outcome, the player is either 0 (black) or 1 (white)."
     if self.state.current_player == 0: self.accumulated_relative_outcome += black_outcome
     if self.state.current_player == 1: self.accumulated_relative_outcome -= black_outcome
-    if self.parent:
+    if self.parent and self.parent.parent:
       self.parent.backpropagate(black_outcome)
 
   def best_move(self):
@@ -105,6 +105,11 @@ class Node:
     child_with_most_visits = self.children[index_of_max_visits]
     child_with_most_visits_move = child_with_most_visits.move
     return child_with_most_visits_move
+
+  def sample_move(self):
+    visits = [child.visits for child in self.children]
+    chosen_child = numpy.random.choice(self.children, p=visits/numpy.sum(visits))
+    return chosen_child.move
 
   def next_node(self, move, current_player):
     move_child = None
@@ -150,10 +155,10 @@ class Node:
       }
       evaluation = requests.post(OTHELLO_ORACLE_URL, json=oracle_command).json()
       if evaluation['exception']:
-        info.d(evaluation)
-        info.d(evaluation['exception'])
+        variables_info.d(evaluation)
+        variables_info.d(evaluation['exception'])
         sys.exit(1)
-      info.d(evaluation)
+      variables_info.d(evaluation)
       current_outcome = evaluation['prediction'][0][0]
       black_outcome = None
       if self.state.current_player == 0: black_outcome = current_outcome
@@ -167,8 +172,8 @@ class Node:
     while node.children:
       node = node.select()
     black_outcome = node.evaluate()
-    node.expand()
     node.backpropagate(black_outcome)
+    node.expand()
 
   def search(self):
     for _ in range(NUM_SIMULATIONS):
