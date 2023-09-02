@@ -365,6 +365,13 @@ class Othello(rules.board.Board):
     self.make_move()
     return self.move
 
+  def make_exploratory_move_with_mcts(self, current_tree_node):
+    current_tree_node.search()
+    next_move = current_tree_node.sample_move()
+    self.move = next_move
+    self.make_move()
+    return self.move
+
   def get_black_outcome(self):
     assert not self.has_legal_move()
     if self.num_tiles[0] > self.num_tiles[1]:
