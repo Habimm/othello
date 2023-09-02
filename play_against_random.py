@@ -2,7 +2,6 @@ import config
 import csv
 import datetime
 import graphviz
-import info
 import mcts
 import multiprocessing
 import os
@@ -11,6 +10,7 @@ import random
 import rules.othello
 import subprocess
 import time
+import variables_info
 
 NUM_PROCESSES = config.env('num_processes')
 NUMBER_OF_GAMES = config.env('number_of_games')
@@ -97,6 +97,8 @@ def worker(job_queue):
     model_load_path = job_queue.get()
     if model_load_path is None:
       return
+
+    variables_info.d(model_load_path)
 
     # The ", 1" is there to protect the model's name to not be changed (in case, the name contains "models").
     play_path = model_load_path.replace('models', 'plays', 1)

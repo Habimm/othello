@@ -1,5 +1,4 @@
 import datetime
-import info
 import os
 
 environment_variables = {
@@ -12,11 +11,11 @@ environment_variables = {
   'num_epochs_per_checkpoint': (100, int),
   'num_games_for_supervised_training': (10, int),
 
-  'num_processes': (8, int),
+  'num_processes': (1, int),
   # 'num_processes': multiprocessing.cpu_count(),
 
-  'num_simulations': (12, int),
-  'number_of_games': (10, int),
+  'num_simulations': (5, int),
+  'number_of_games': (1, int),
   'oracle_url': ('http://localhost:8000/predict', str),
 
   'output_path': ('output/20230828091759', str),

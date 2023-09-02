@@ -1,4 +1,3 @@
-import info
 import json
 import numpy
 import os

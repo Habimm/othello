@@ -8,7 +8,7 @@ and env | grep OTHELLO
 and echo
 # and ipython3 decompose_games.py
 # and ipython3 train.py
-and ipython3 play_against_random.py
+# and ipython3 play_against_random.py
 # and ipython3 stories.py
 
 
