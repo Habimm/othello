@@ -112,20 +112,19 @@ class Node:
     self.parent.visit_counts[self_index] += 1
     self.parent.sum_visit_counts += 1
 
-    # Calculate the new average incrementally
-    old_average = self.parent.average_relative_values[self_index]
-    new_value = self.parent.accumulated_relative_values[self_index]
-    count = self.parent.visit_counts[self_index]
-
     if self.parent.state.current_player == 0:
       self.parent.accumulated_relative_values[self_index] += black_outcome
-      new_value += black_outcome
     elif self.parent.state.current_player == 1:
       self.parent.accumulated_relative_values[self_index] -= black_outcome
-      new_value -= black_outcome
 
     # Update the average incrementally
-    self.parent.average_relative_values[self_index] = old_average + (new_value - old_average) / count
+    # Might want to integrate this formula later: https://math.stackexchange.com/questions/106313/regular-average-calculated-accumulatively
+    self.parent.average_relative_values[self_index] = self.parent.accumulated_relative_values[self_index] / self.parent.visit_counts[self_index]
+    assert self.parent.average_relative_values[self_index] * self.parent.visit_counts[self_index] == self.parent.accumulated_relative_values[self_index], (
+      f'self.parent.average_relative_values[self_index]: {self.parent.average_relative_values[self_index]}, '
+      f'self.parent.visit_counts[self_index]: {self.parent.visit_counts[self_index]}, '
+      f'self.parent.accumulated_relative_values[self_index]: {self.parent.accumulated_relative_values[self_index]}'
+    )
 
     self.parent.backpropagate(black_outcome)
 
