@@ -15,5 +15,7 @@ dependencies:
     - psutil==5.9.5
     - ray==2.6.3
     - ray[serve]
+    - redis==5.0.0
     - scikit-learn==1.3.0
     - tensorflow==2.13.0
+    - variables-info==0.1
