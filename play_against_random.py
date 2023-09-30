@@ -73,19 +73,19 @@ def play_game(model_load_path):
       now = datetime.datetime.now()
       timestamp = now.strftime('%Y%m%d%H%M%S')
       dot_file_path = f'{OUTPUT_PATH}/mcts/{timestamp}.dot'
+      json_file_path = f'{OUTPUT_PATH}/mcts/{timestamp}.json'
 
       # This render() function will write TWO files:
       # First, it writes the DOT file to the given path.
       # Second, it writes the SVG file to the given path, followed by '.svg'.
       try:
         graphviz_source.render(filename=dot_file_path, view=False)
+        initial_state_root.to_json(json_file_path)
         break
       except subprocess.CalledProcessError:
         # Sometimes, we get:
         # subprocess.CalledProcessError: Command '[PosixPath('dot'), '-Kdot', '-Tsvg', '-O', '20230824090520.dot']' returned non-zero exit status 1.
         # But the .svg file is created and is well-readable. So, we ignore all called process errors.
-        # Der Fehler liegt daran, dass hier zwei Prozesse gleichzeitig laufen.
-        # Der eine
         time.sleep(1)
         pass
 

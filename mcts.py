@@ -1,4 +1,6 @@
 import copy
+import info
+import json
 import math
 import multiprocessing
 import numpy
@@ -6,7 +8,6 @@ import os
 import requests
 import rules.othello
 import sys
-import info
 
 info.set_log_file('mcts.log')
 
@@ -226,7 +227,7 @@ class Node:
         if node.state.current_player == 1:
           fillcolor = 'fillcolor="#0000FF80", style="filled"'
       else:
-        fillcolor = ''
+        fillcolor = 'fillcolor="#FFFFFF", style="filled"'
 
       if node.is_final:
         fillcolor = 'fillcolor="#00FF0080", style="filled"'
@@ -263,3 +264,45 @@ class Node:
 
   def __repr__(self):
     return self._repr_helper()
+
+  def to_json(self, file_path):
+    json_array = []
+
+    def traverse(node):
+      node_dict = {
+        'node_id': f"node_{id(node)}",
+        'accumulated_relative_values': node.accumulated_relative_values.tolist() if node.accumulated_relative_values is not None else None,
+        'average_relative_values': node.average_relative_values.tolist() if node.average_relative_values is not None else None,
+        'visit_counts': node.visit_counts.tolist() if node.visit_counts is not None else None,
+        'probabilities': node.probabilities.tolist() if node.probabilities is not None else None,
+        'sum_visit_counts': node.sum_visit_counts,
+        'children': [f"node_{id(child)}" for child in node.children],
+        'state': str(node.state)
+      }
+
+      if node.moving_along:
+        if node.state.current_player == 0:
+          node_dict['fillcolor'] = '#FF000080'
+          node_dict['style'] = 'filled'
+        if node.state.current_player == 1:
+          node_dict['fillcolor'] = '#0000FF80'
+          node_dict['style'] = 'filled'
+      else:
+        node_dict['fillcolor'] = '#FFFFFF'
+        node_dict['style'] = 'filled'
+
+      if node.is_final:
+        node_dict['fillcolor'] = '#00FF0080'
+        node_dict['style'] = 'filled'
+
+      json_array.append(node_dict)
+
+      for child in node.children:
+        traverse(child)
+
+    traverse(self)
+
+    with open(file_path, 'w') as json_file:
+      json.dump(json_array, json_file, indent=2)
+
+    return json_array  # Return the array for optional further use
