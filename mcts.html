@@ -56,28 +56,23 @@
       }));
     }
 
-    // Converter function for node appearance
-    function nodeStrokeConverter(node) {
-      if (node instanceof go.Node && !node.isTreeExpanded) {
-        return { color: "orange", width: 20 };
-      }
+function nodeStrokeConverter(node) {
+  if (node instanceof go.Node) {
+    // Check if the node is a leaf (has no children)
+    if (node.findTreeChildrenNodes().count === 0) {
       return { color: "black", width: 1 };
     }
-
-    // Toggle node expanded state
-    function toggleCollapseExpand(node) {
-      if (!(node instanceof go.Node)) return;
-      const diagram = node.diagram;
-      if (!diagram) return;
-
-      diagram.startTransaction("CollapseExpandTree");
-      if (node.isTreeExpanded) {
-        diagram.commandHandler.collapseTree(node);
-      } else {
-        diagram.commandHandler.expandTree(node);
-      }
-      diagram.commitTransaction("CollapseExpandTree");
+    // Check if node is not expanded
+    else if (!node.isTreeExpanded) {
+      return { color: "orange", width: 20 };
     }
+  }
+  // Default return
+  return { color: "black", width: 1 };
+}
+
+
+
 
     // ----------- INITIALIZATION -------------
 
@@ -109,7 +104,10 @@
         "undoManager.isEnabled": true
       });
 
-      myDiagram.nodeTemplate = $(go.Node, "Vertical", { selectionObjectName: "BODY" },
+      myDiagram.nodeTemplate = $(go.Node, "Vertical",     {
+      isTreeExpanded: false, // By default, nodes are collapsed
+      selectionObjectName: "BODY"
+    },
         $(go.Panel, "Auto", { name: "BODY" },
           $(go.Shape, "RoundedRectangle",
             new go.Binding("fill"),
@@ -128,7 +126,41 @@
 
       myDiagram.linkTemplate = $(go.Link, $(go.Shape, { strokeWidth: 1.5 }));
       myDiagram.toolManager.mouseWheelBehavior = go.ToolManager.WheelZoom;
-      myDiagram.addDiagramListener("ObjectDoubleClicked", e => toggleCollapseExpand(e.subject.part));
+
+
+myDiagram.addDiagramListener("ObjectDoubleClicked", e => {
+  const node = e.subject.part;
+  if (!(node instanceof go.Node)) return;
+  const diagram = node.diagram;
+  if (!diagram) return;
+
+  diagram.startTransaction("CollapseExpandTree");
+  if (node.isTreeExpanded) {
+    diagram.commandHandler.collapseTree(node);
+  } else {
+    node.expandTree(1); // Expand to just one level
+  }
+  diagram.commitTransaction("CollapseExpandTree");
+});
+
+
+
+
+
+  // After the diagram has been laid out, expand the top-level nodes to one level
+  myDiagram.addDiagramListener("InitialLayoutCompleted", e => {
+    // Find top-level nodes and expand them to one level
+    e.diagram.nodes.each(node => {
+      if (!node.findTreeParentNode()) {
+        node.expandTree(1);
+      }
+    });
+  });
+
+
+
+
+
       myDiagram.model = new go.TreeModel({ nodeDataArray: nodeDataArray });
       myDiagram.nodes.each(node => {
         if (node.isTreeExpanded) myDiagram.commandHandler.collapseTree(node);
