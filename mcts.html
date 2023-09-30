@@ -92,6 +92,20 @@ function nodeStrokeConverter(node) {
       const $ = go.GraphObject.make;
 
       const myDiagram = $(go.Diagram, "myDiagramDiv", {
+
+
+
+            layout: $(go.TreeLayout, {
+      angle: 90,
+      compaction: go.TreeLayout.CompactionNone,
+      arrangement: go.TreeLayout.ArrangementFixedRoots,
+      layerSpacing: 35,   // Increase spacing between layers
+      layerSpacingParentOverlap: 1.0,  // Overlap factor between parent and children
+      setsPortSpot: false,   // Don't allow the layout to set port spots since we're using orthogonal links
+      setsChildPortSpot: false
+    }),
+
+
         allowCopy: false,
         allowDelete: false,
         allowMove: true,
@@ -123,8 +137,28 @@ function nodeStrokeConverter(node) {
           }, new go.Binding("text"))
         )
       );
+function linkLabelConverter(linkdata, link) {
+  return "";
+}
 
-      myDiagram.linkTemplate = $(go.Link, $(go.Shape, { strokeWidth: 1.5 }));
+
+
+
+myDiagram.linkTemplate = $(go.Link,
+  {
+    curve: go.Link.Bezier,
+    curviness: -10
+  },
+  $(go.Shape, { stroke: "#007BFF", strokeWidth: 5 }),
+$(go.TextBlock,
+  { name: "LABEL", segmentOffset: new go.Point(0, -10) },
+  new go.Binding("text", "", linkLabelConverter)
+)
+
+);
+
+
+
       myDiagram.toolManager.mouseWheelBehavior = go.ToolManager.WheelZoom;
 
 
@@ -146,17 +180,22 @@ myDiagram.addDiagramListener("ObjectDoubleClicked", e => {
 
 
 
-
-  // After the diagram has been laid out, expand the top-level nodes to one level
-  myDiagram.addDiagramListener("InitialLayoutCompleted", e => {
-    // Find top-level nodes and expand them to one level
-    e.diagram.nodes.each(node => {
-      if (!node.findTreeParentNode()) {
-        node.expandTree(1);
-      }
-    });
+myDiagram.addDiagramListener("InitialLayoutCompleted", function(e) {
+  // Find top-level nodes and expand them to one level
+  e.diagram.nodes.each(node => {
+    if (!node.findTreeParentNode()) {
+      node.expandTree(1);
+    }
   });
 
+  // Update the labels for all links after layout
+  e.diagram.links.each(function(link) {
+    const fromNodeData = link.fromNode.data;
+    if (fromNodeData && fromNodeData.text) {
+      link.findObject("LABEL").text = fromNodeData.text.length.toString();
+    }
+  });
+});
 
 
 
