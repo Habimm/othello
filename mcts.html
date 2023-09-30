@@ -52,7 +52,12 @@
         key: item.node_id,
         text: customStringify(item),
         fill: item.fillcolor,
-        parent: parentMap[item.node_id]
+        parent: parentMap[item.node_id],
+        children: item.children,
+        probabilities: item.probabilities,
+        accumulated_relative_values: item.accumulated_relative_values,
+        average_relative_values: item.average_relative_values,
+        visit_counts: item.visit_counts,
       }));
     }
 
@@ -188,13 +193,27 @@ myDiagram.addDiagramListener("InitialLayoutCompleted", function(e) {
     }
   });
 
-  // Update the labels for all links after layout
-  e.diagram.links.each(function(link) {
-    const fromNodeData = link.fromNode.data;
-    if (fromNodeData && fromNodeData.text) {
-      link.findObject("LABEL").text = fromNodeData.text.length.toString();
-    }
-  });
+// Update the labels for all links after layout
+e.diagram.links.each(function(link) {
+  const fromNodeData = link.fromNode.data;
+  console.log(fromNodeData)
+  if (fromNodeData) {
+    // Extract the data object from the node's data
+    console.log(fromNodeData)
+    edge_index = fromNodeData.children.indexOf(link.toNode.data.key)
+
+    // Create a JSON object with the desired properties
+    const jsonObject = {
+      accumulated_relative_value: fromNodeData.accumulated_relative_values[edge_index],
+      average_relative_value: fromNodeData.average_relative_values[edge_index],
+      visit_count: fromNodeData.visit_counts[edge_index],
+      probability: fromNodeData.probabilities[edge_index]
+    };
+    link.findObject("LABEL").text = JSON.stringify(jsonObject, null, 2); // Pretty print with indentation
+  }
+});
+
+
 });
 
 
