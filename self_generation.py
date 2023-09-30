@@ -66,24 +66,23 @@ def play_game(model_load_path):
       now = datetime.datetime.now()
       timestamp = now.strftime('%Y%m%d%H%M%S')
       dot_file_path = f'{OUTPUT_PATH}/mcts/{timestamp}.dot'
+      json_file_path = f'{OUTPUT_PATH}/mcts/{timestamp}.json'
 
       # This render() function will write TWO files:
       # First, it writes the DOT file to the given path.
       # Second, it writes the SVG file to the given path, followed by '.svg'.
       try:
-        graphviz_source.render(filename=dot_file_path, view=False)
+        initial_state_root.to_json(json_file_path)
         break
       except subprocess.CalledProcessError:
         # Sometimes, we get:
         # subprocess.CalledProcessError: Command '[PosixPath('dot'), '-Kdot', '-Tsvg', '-O', '20230824090520.dot']' returned non-zero exit status 1.
         # But the .svg file is created and is well-readable. So, we ignore all called process errors.
-        # Der Fehler liegt daran, dass hier zwei Prozesse gleichzeitig laufen.
-        # Der eine
         time.sleep(1)
         pass
 
   assert black_outcome is not None
-  return black_outcome, moves
+  return black_outcome, moves, timestamp
 
 def worker(job_queue):
   while True:
@@ -102,15 +101,12 @@ def worker(job_queue):
       with open(play_path, 'w') as random_evaluation_file:
         print('evaluation_game_id,model_load_path,baseline,black_outcome,game_moves', file=random_evaluation_file)
 
-    black_outcome, moves = play_game(model_load_path)
-
-    random_integer = random.randint(0, 100_000)
-    game_id = str(random_integer).zfill(5)
+    black_outcome, moves, timestamp = play_game(model_load_path)
 
     translated_moves = [convert_index_to_chess_notation(move) for move in moves]
     moves_concatenation = ''.join(translated_moves).lower()
 
-    row = f'{game_id},{model_load_path},RANDOM_PLAYER,{black_outcome},{moves_concatenation}'
+    row = f'{timestamp},{model_load_path},RANDOM_PLAYER,{black_outcome},{moves_concatenation}'
     with open(play_path, 'a') as random_evaluation_file:
       print(row, file=random_evaluation_file)
       print(f'Written row to {play_path}.')

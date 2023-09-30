@@ -1,5 +1,5 @@
 import copy
-import info
+import variables_info
 import json
 import math
 import multiprocessing
@@ -8,8 +8,6 @@ import os
 import requests
 import rules.othello
 import sys
-
-info.set_log_file('mcts.log')
 
 def get_env_variable(name):
   value = os.environ.get(name)
@@ -121,7 +119,7 @@ class Node:
     # Update the average incrementally
     # Might want to integrate this formula later: https://math.stackexchange.com/questions/106313/regular-average-calculated-accumulatively
     self.parent.average_relative_values[self_index] = self.parent.accumulated_relative_values[self_index] / self.parent.visit_counts[self_index]
-    assert self.parent.average_relative_values[self_index] * self.parent.visit_counts[self_index] == self.parent.accumulated_relative_values[self_index], (
+    assert numpy.isclose(self.parent.average_relative_values[self_index] * self.parent.visit_counts[self_index], self.parent.accumulated_relative_values[self_index], atol=1e-8), (
       f'self.parent.average_relative_values[self_index]: {self.parent.average_relative_values[self_index]}, '
       f'self.parent.visit_counts[self_index]: {self.parent.visit_counts[self_index]}, '
       f'self.parent.accumulated_relative_values[self_index]: {self.parent.accumulated_relative_values[self_index]}'
@@ -181,8 +179,8 @@ class Node:
       }
       evaluation = requests.post(OTHELLO_ORACLE_URL, json=oracle_command).json()
       if evaluation['exception']:
-        info.d(evaluation)
-        info.d(evaluation['exception'])
+        variables_info.d(evaluation)
+        variables_info.d(evaluation['exception'])
         sys.exit(1)
       current_outcome = evaluation['prediction'][0][0]
       black_outcome = None
