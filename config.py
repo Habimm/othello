@@ -14,7 +14,7 @@ environment_variables = {
   'num_processes': (1, int),
   # 'num_processes': multiprocessing.cpu_count(),
 
-  'num_simulations': (5, int),
+  'num_simulations': (100, int),
   'number_of_games': (1, int),
   'oracle_url': ('http://localhost:8000/predict', str),
 
