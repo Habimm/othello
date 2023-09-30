@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagram Viewer</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    #myDiagramDiv {
+      width: 100%;
+      height: 100%;
+      border: 1px solid black;
+    }
+  </style>
+</head>
+
+<body>
+  <input type="file" id="dotFileInput">
+  <div id="myDiagramDiv"></div>
+  <script src="go.js"></script>
+
+  <script>
+    // ----------- UTILITIES -------------
+
+    // Stringify with custom handling for 'state' key
+    function customStringify(obj) {
+      const entries = Object.entries(obj);
+      return `{ ${entries.map(([key, value]) => {
+        if (key === "state") return `${key}: "${value.replace(/\\n/g, '\n')}"`;
+        return `${key}: ${JSON.stringify(value)}`;
+      }).join(',\n')} }`;
+    }
+
+    // Parse JSON data to derive parent-child relations
+    function parseJSON(jsonData) {
+      let parentMap = {};
+      jsonData.forEach(item => {
+        if (item.children && item.children.length) {
+          item.children.forEach(childId => parentMap[childId] = item.node_id);
+        }
+      });
+
+      return jsonData.map(item => ({
+        key: item.node_id,
+        text: customStringify(item),
+        fill: item.fillcolor,
+        parent: parentMap[item.node_id]
+      }));
+    }
+
+    // Converter function for node appearance
+    function nodeStrokeConverter(node) {
+      if (node instanceof go.Node && !node.isTreeExpanded) {
+        return { color: "orange", width: 20 };
+      }
+      return { color: "black", width: 1 };
+    }
+
+    // Toggle node expanded state
+    function toggleCollapseExpand(node) {
+      if (!(node instanceof go.Node)) return;
+      const diagram = node.diagram;
+      if (!diagram) return;
+
+      diagram.startTransaction("CollapseExpandTree");
+      if (node.isTreeExpanded) {
+        diagram.commandHandler.collapseTree(node);
+      } else {
+        diagram.commandHandler.expandTree(node);
+      }
+      diagram.commitTransaction("CollapseExpandTree");
+    }
+
+    // ----------- INITIALIZATION -------------
+
+    document.getElementById('dotFileInput').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const nodeDataArray = parseJSON(JSON.parse(e.target.result));
+        init(nodeDataArray);
+      };
+      reader.readAsText(file);
+    });
+
+    function init(nodeDataArray) {
+      const $ = go.GraphObject.make;
+
+      const myDiagram = $(go.Diagram, "myDiagramDiv", {
+        allowCopy: false,
+        allowDelete: false,
+        allowMove: true,
+        initialAutoScale: go.Diagram.Uniform,
+        layout: $(FlatTreeLayout, {
+          angle: 90,
+          compaction: go.TreeLayout.CompactionNone,
+          arrangement: go.TreeLayout.ArrangementFixedRoots
+        }),
+        "undoManager.isEnabled": true
+      });
+
+      myDiagram.nodeTemplate = $(go.Node, "Vertical", { selectionObjectName: "BODY" },
+        $(go.Panel, "Auto", { name: "BODY" },
+          $(go.Shape, "RoundedRectangle",
+            new go.Binding("fill"),
+            new go.Binding("stroke", "", node => nodeStrokeConverter(node).color).ofObject(),
+            new go.Binding("strokeWidth", "", node => nodeStrokeConverter(node).width).ofObject()
+          ),
+          $(go.TextBlock, {
+            font: "bold 12pt Arial, sans-serif",
+            margin: new go.Margin(4, 2, 2, 2),
+            isMultiline: true,
+            textAlign: "center",
+            editable: false
+          }, new go.Binding("text"))
+        )
+      );
+
+      myDiagram.linkTemplate = $(go.Link, $(go.Shape, { strokeWidth: 1.5 }));
+      myDiagram.toolManager.mouseWheelBehavior = go.ToolManager.WheelZoom;
+      myDiagram.addDiagramListener("ObjectDoubleClicked", e => toggleCollapseExpand(e.subject.part));
+      myDiagram.model = new go.TreeModel({ nodeDataArray: nodeDataArray });
+      myDiagram.nodes.each(node => {
+        if (node.isTreeExpanded) myDiagram.commandHandler.collapseTree(node);
+      });
+    }
+
+    // Custom layout class for diagram
+    class FlatTreeLayout extends go.TreeLayout {
+      commitLayout() {
+        super.commitLayout();
+        let y = -Infinity;
+        this.network.vertexes.each(v => {
+          y = Math.max(y, v.node.position.y);
+        });
+        this.network.vertexes.each(v => {
+          if (v.destinationEdges.count === 0) {
+            v.node.moveTo(v.node.position.x, y);
+            v.node.toEndSegmentLength = Math.abs(v.centerY - y);
+          } else {
+            v.node.toEndSegmentLength = 10;
+          }
+        });
+      }
+    }
+  </script>
+</body>
+
+</html>
