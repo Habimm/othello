@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Diagram Viewer</title>
+  <title>MCTS</title>
   <style>
     body, html {
       margin: 0;
@@ -14,7 +14,7 @@
       overflow: hidden;
     }
 
-    #myDiagramDiv {
+    #mctsDiagramDiv {
       width: 100%;
       height: 100%;
       border: 1px solid black;
@@ -23,8 +23,8 @@
 </head>
 
 <body>
-  <input type="file" id="dotFileInput">
-  <div id="myDiagramDiv"></div>
+  <input type="file" id="jsonInput">
+  <div id="mctsDiagramDiv"></div>
   <script src="go.js"></script>
 
   <script>
@@ -34,21 +34,21 @@
     function customStringify(obj) {
       const entries = Object.entries(obj);
       return `{ ${entries.map(([key, value]) => {
-        if (key === "state") return `${key}: "${value.replace(/\\n/g, '\n')}"`;
+        if (key === 'state') return `${key}: "${value.replace(/\\n/g, '\n')}"`;
         return `${key}: ${JSON.stringify(value)}`;
       }).join(',\n')} }`;
     }
 
     // Parse JSON data to derive parent-child relations
     function parseJSON(jsonData) {
-      let parentMap = {};
-      jsonData.forEach(item => {
+      const parentMap = {};
+      jsonData.forEach((item) => {
         if (item.children && item.children.length) {
-          item.children.forEach(childId => parentMap[childId] = item.node_id);
+          item.children.forEach((childId) => parentMap[childId] = item.node_id);
         }
       });
 
-      return jsonData.map(item => ({
+      return jsonData.map((item) => ({
         key: item.node_id,
         text: customStringify(item),
         fill: item.fillcolor,
@@ -61,32 +61,29 @@
       }));
     }
 
-function nodeStrokeConverter(node) {
-  if (node instanceof go.Node) {
-    // Check if the node is a leaf (has no children)
-    if (node.findTreeChildrenNodes().count === 0) {
-      return { color: "black", width: 1 };
+    function nodeStrokeConverter(node) {
+      if (node instanceof go.Node) {
+        // Check if the node is a leaf (has no children)
+        if (node.findTreeChildrenNodes().count === 0) {
+          return { color: 'black', width: 1 };
+        }
+        // Check if node is not expanded
+        if (!node.isTreeExpanded) {
+          return { color: 'orange', width: 20 };
+        }
+      }
+      // Default return
+      return { color: 'black', width: 1 };
     }
-    // Check if node is not expanded
-    else if (!node.isTreeExpanded) {
-      return { color: "orange", width: 20 };
-    }
-  }
-  // Default return
-  return { color: "black", width: 1 };
-}
-
-
-
 
     // ----------- INITIALIZATION -------------
 
-    document.getElementById('dotFileInput').addEventListener('change', function(event) {
+    document.getElementById('jsonInput').addEventListener('change', (event) => {
       const file = event.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = function (e) {
         const nodeDataArray = parseJSON(JSON.parse(e.target.result));
         init(nodeDataArray);
       };
@@ -96,20 +93,17 @@ function nodeStrokeConverter(node) {
     function init(nodeDataArray) {
       const $ = go.GraphObject.make;
 
-      const myDiagram = $(go.Diagram, "myDiagramDiv", {
+      const myDiagram = $(go.Diagram, 'mctsDiagramDiv', {
 
-
-
-            layout: $(go.TreeLayout, {
-      angle: 90,
-      compaction: go.TreeLayout.CompactionNone,
-      arrangement: go.TreeLayout.ArrangementFixedRoots,
-      layerSpacing: 35,   // Increase spacing between layers
-      layerSpacingParentOverlap: 1.0,  // Overlap factor between parent and children
-      setsPortSpot: false,   // Don't allow the layout to set port spots since we're using orthogonal links
-      setsChildPortSpot: false
-    }),
-
+        layout: $(go.TreeLayout, {
+          angle: 90,
+          compaction: go.TreeLayout.CompactionNone,
+          arrangement: go.TreeLayout.ArrangementFixedRoots,
+          layerSpacing: 35, // Increase spacing between layers
+          layerSpacingParentOverlap: 1.0, // Overlap factor between parent and children
+          setsPortSpot: false, // Don't allow the layout to set port spots since we're using orthogonal links
+          setsChildPortSpot: false,
+        }),
 
         allowCopy: false,
         allowDelete: false,
@@ -118,109 +112,102 @@ function nodeStrokeConverter(node) {
         layout: $(FlatTreeLayout, {
           angle: 90,
           compaction: go.TreeLayout.CompactionNone,
-          arrangement: go.TreeLayout.ArrangementFixedRoots
+          arrangement: go.TreeLayout.ArrangementFixedRoots,
         }),
-        "undoManager.isEnabled": true
+        'undoManager.isEnabled': true,
       });
 
-      myDiagram.nodeTemplate = $(go.Node, "Vertical",     {
-      isTreeExpanded: false, // By default, nodes are collapsed
-      selectionObjectName: "BODY"
-    },
-        $(go.Panel, "Auto", { name: "BODY" },
-          $(go.Shape, "RoundedRectangle",
-            new go.Binding("fill"),
-            new go.Binding("stroke", "", node => nodeStrokeConverter(node).color).ofObject(),
-            new go.Binding("strokeWidth", "", node => nodeStrokeConverter(node).width).ofObject()
+      myDiagram.nodeTemplate = $(
+        go.Node,
+        'Vertical',
+        {
+          isTreeExpanded: false, // By default, nodes are collapsed
+          selectionObjectName: 'BODY',
+        },
+        $(
+          go.Panel,
+          'Auto',
+          { name: 'BODY' },
+          $(
+            go.Shape,
+            'RoundedRectangle',
+            new go.Binding('fill'),
+            new go.Binding('stroke', '', (node) => nodeStrokeConverter(node).color).ofObject(),
+            new go.Binding('strokeWidth', '', (node) => nodeStrokeConverter(node).width).ofObject(),
           ),
           $(go.TextBlock, {
-            font: "bold 12pt Arial, sans-serif",
+            font: 'bold 12pt Arial, sans-serif',
             margin: new go.Margin(4, 2, 2, 2),
             isMultiline: true,
-            textAlign: "center",
-            editable: false
-          }, new go.Binding("text"))
-        )
+            textAlign: 'center',
+            editable: false,
+          }, new go.Binding('text')),
+        ),
       );
-function linkLabelConverter(linkdata, link) {
-  return "";
-}
 
+      myDiagram.linkTemplate = $(
+        go.Link,
+        {
+          curve: go.Link.Bezier,
+          curviness: -10,
+        },
+        $(go.Shape, { stroke: '#007BFF', strokeWidth: 5 }),
+        $(
+          go.TextBlock,
+          { name: 'LABEL', segmentOffset: new go.Point(0, -10) },
+          new go.Binding('text', '', ''),
+        ),
 
-
-
-myDiagram.linkTemplate = $(go.Link,
-  {
-    curve: go.Link.Bezier,
-    curviness: -10
-  },
-  $(go.Shape, { stroke: "#007BFF", strokeWidth: 5 }),
-$(go.TextBlock,
-  { name: "LABEL", segmentOffset: new go.Point(0, -10) },
-  new go.Binding("text", "", linkLabelConverter)
-)
-
-);
-
-
+      );
 
       myDiagram.toolManager.mouseWheelBehavior = go.ToolManager.WheelZoom;
 
+      myDiagram.addDiagramListener('ObjectDoubleClicked', (e) => {
+        const node = e.subject.part;
+        if (!(node instanceof go.Node)) return;
+        const { diagram } = node;
+        if (!diagram) return;
 
-myDiagram.addDiagramListener("ObjectDoubleClicked", e => {
-  const node = e.subject.part;
-  if (!(node instanceof go.Node)) return;
-  const diagram = node.diagram;
-  if (!diagram) return;
+        diagram.startTransaction('CollapseExpandTree');
+        if (node.isTreeExpanded) {
+          diagram.commandHandler.collapseTree(node);
+        } else {
+          node.expandTree(1); // Expand to just one level
+        }
+        diagram.commitTransaction('CollapseExpandTree');
+      });
 
-  diagram.startTransaction("CollapseExpandTree");
-  if (node.isTreeExpanded) {
-    diagram.commandHandler.collapseTree(node);
-  } else {
-    node.expandTree(1); // Expand to just one level
-  }
-  diagram.commitTransaction("CollapseExpandTree");
-});
+      myDiagram.addDiagramListener('InitialLayoutCompleted', (e) => {
+        // Find top-level nodes and expand them to one level
+        e.diagram.nodes.each((node) => {
+          if (!node.findTreeParentNode()) {
+            node.expandTree(1);
+          }
+        });
 
+        // Update the labels for all links after layout
+        e.diagram.links.each((link) => {
+          const fromNodeData = link.fromNode.data;
+          console.log(fromNodeData);
+          if (fromNodeData) {
+            // Extract the data object from the node's data
+            console.log(fromNodeData);
+            edge_index = fromNodeData.children.indexOf(link.toNode.data.key);
 
+            // Create a JSON object with the desired properties
+            const jsonObject = {
+              accumulated_relative_value: fromNodeData.accumulated_relative_values[edge_index],
+              average_relative_value: fromNodeData.average_relative_values[edge_index],
+              visit_count: fromNodeData.visit_counts[edge_index],
+              probability: fromNodeData.probabilities[edge_index],
+            };
+            link.findObject('LABEL').text = JSON.stringify(jsonObject, null, 2); // Pretty print with indentation
+          }
+        });
+      });
 
-
-myDiagram.addDiagramListener("InitialLayoutCompleted", function(e) {
-  // Find top-level nodes and expand them to one level
-  e.diagram.nodes.each(node => {
-    if (!node.findTreeParentNode()) {
-      node.expandTree(1);
-    }
-  });
-
-// Update the labels for all links after layout
-e.diagram.links.each(function(link) {
-  const fromNodeData = link.fromNode.data;
-  console.log(fromNodeData)
-  if (fromNodeData) {
-    // Extract the data object from the node's data
-    console.log(fromNodeData)
-    edge_index = fromNodeData.children.indexOf(link.toNode.data.key)
-
-    // Create a JSON object with the desired properties
-    const jsonObject = {
-      accumulated_relative_value: fromNodeData.accumulated_relative_values[edge_index],
-      average_relative_value: fromNodeData.average_relative_values[edge_index],
-      visit_count: fromNodeData.visit_counts[edge_index],
-      probability: fromNodeData.probabilities[edge_index]
-    };
-    link.findObject("LABEL").text = JSON.stringify(jsonObject, null, 2); // Pretty print with indentation
-  }
-});
-
-
-});
-
-
-
-
-      myDiagram.model = new go.TreeModel({ nodeDataArray: nodeDataArray });
-      myDiagram.nodes.each(node => {
+      myDiagram.model = new go.TreeModel({ nodeDataArray });
+      myDiagram.nodes.each((node) => {
         if (node.isTreeExpanded) myDiagram.commandHandler.collapseTree(node);
       });
     }
@@ -230,10 +217,10 @@ e.diagram.links.each(function(link) {
       commitLayout() {
         super.commitLayout();
         let y = -Infinity;
-        this.network.vertexes.each(v => {
+        this.network.vertexes.each((v) => {
           y = Math.max(y, v.node.position.y);
         });
-        this.network.vertexes.each(v => {
+        this.network.vertexes.each((v) => {
           if (v.destinationEdges.count === 0) {
             v.node.moveTo(v.node.position.x, y);
             v.node.toEndSegmentLength = Math.abs(v.centerY - y);
