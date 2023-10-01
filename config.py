@@ -14,7 +14,7 @@ environment_variables = {
   'num_processes': (1, int),
   # 'num_processes': multiprocessing.cpu_count(),
 
-  'num_simulations': (100, int),
+  'num_simulations': (7, int),
   'number_of_games': (1, int),
   'oracle_url': ('http://localhost:8000/predict', str),
 
@@ -38,7 +38,6 @@ if __name__ == '__main__':
   for key, (value, _) in environment_variables.items():
     env_var_name = f'OTHELLO_{key.upper()}'
     if key == 'output_path':
-      now = datetime.datetime.now()
-      timestamp_of_now = now.strftime('%Y%m%d%H%M%S')
+      timestamp_of_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
       value = value.replace('{timestamp_of_now}', timestamp_of_now)
     print(f'set -gx {env_var_name} {value}')
