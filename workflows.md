@@ -48,6 +48,7 @@ for line in env_var_commands:
 !. .virtualenv_environment/bin/activate && python train.py
 !. .virtualenv_environment/bin/activate && python oracle.py
 !. .virtualenv_environment/bin/activate && python play_against_random.py
+!. .virtualenv_environment/bin/activate && python self_generation.py
 
 !echo $VIRTUAL_ENV
 !. .virtualenv_environment/bin/activate && echo $VIRTUAL_ENV
