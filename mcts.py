@@ -1,5 +1,4 @@
 import copy
-import variables_info
 import json
 import math
 import multiprocessing
@@ -8,6 +7,8 @@ import os
 import requests
 import rules.othello
 import sys
+import tensorflow
+import variables_info
 
 def get_env_variable(name):
   value = os.environ.get(name)
@@ -55,6 +56,7 @@ class Node:
     self.state.current_player = copy.deepcopy(state_to_be.current_player)
     self.state.num_tiles = copy.deepcopy(state_to_be.num_tiles)
 
+    self.model = tensorflow.keras.models.load_model(model_load_path)
     self.model_load_path = model_load_path
     self.accumulated_relative_outcome = 0
     self.visits = 0
@@ -173,16 +175,9 @@ class Node:
       black_outcome = self.state.get_black_outcome()
     else:
       move_board_tensor = board_to_tensor(self.state.board, self.state.current_player)
-      oracle_command = {
-        'board': move_board_tensor,
-        'model_load_path': self.model_load_path,
-      }
-      evaluation = requests.post(OTHELLO_ORACLE_URL, json=oracle_command).json()
-      if evaluation['exception']:
-        variables_info.d(evaluation)
-        variables_info.d(evaluation['exception'])
-        sys.exit(1)
-      current_outcome = evaluation['prediction'][0][0]
+      prediction = self.model.predict([move_board_tensor], verbose=0)
+      assert prediction.shape == (1, 1), 'Assertion failed: prediction.shape == (1, 1)'
+      current_outcome = prediction[0][0]
       black_outcome = None
       if self.state.current_player == 0: black_outcome = current_outcome
       if self.state.current_player == 1: black_outcome = -current_outcome
