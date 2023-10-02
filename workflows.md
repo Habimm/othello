@@ -39,14 +39,17 @@ for line in env_var_commands:
 
 !cat conda.yaml | awk '/pip:/ {flag=1; next} flag' | grep -E '^[[:space:]]+- ' | sed 's/^[[:space:]]*- //' > requirements.txt
 
-!python -m venv .venv_environment
-!. .venv_environment/bin/activate && pip install -r requirements.txt
-!. .venv_environment/bin/activate && python decompose_games.py
-!. .venv_environment/bin/activate && python train.py
-!. .venv_environment/bin/activate && python oracle.py
-!. .venv_environment/bin/activate && python play_against_random.py
+# If you use `python -m venv` instead of `virtualenv` here,
+# then you might get an error message related to `ensurepip`.
+!python -m pip install virtualenv
+!virtualenv .virtualenv_environment
+!. .virtualenv_environment/bin/activate && pip install -r requirements.txt
+!. .virtualenv_environment/bin/activate && python decompose_games.py
+!. .virtualenv_environment/bin/activate && python train.py
+!. .virtualenv_environment/bin/activate && python oracle.py
+!. .virtualenv_environment/bin/activate && python play_against_random.py
 
 !echo $VIRTUAL_ENV
-!. .venv_environment/bin/activate && echo $VIRTUAL_ENV
-!. .venv_environment/bin/activate && pip list
+!. .virtualenv_environment/bin/activate && echo $VIRTUAL_ENV
+!. .virtualenv_environment/bin/activate && pip list
 ```
