@@ -56,7 +56,7 @@ class Node:
     self.state.current_player = copy.deepcopy(state_to_be.current_player)
     self.state.num_tiles = copy.deepcopy(state_to_be.num_tiles)
 
-    self.model = tensorflow.keras.models.load_model(model_load_path)
+    self.model = tensorflow.keras.models.load_model(model_load_path, compile=False)
     self.model_load_path = model_load_path
     self.accumulated_relative_outcome = 0
     self.visits = 0
