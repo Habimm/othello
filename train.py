@@ -124,7 +124,8 @@ class SaveModelsCallback(tensorflow.keras.callbacks.Callback):
   # The logs do not contain the loss at all.
   def on_epoch_begin(self, epoch, logs=None):
     if epoch % num_epochs_per_checkpoint == 0:
-      self.model.save(filepath.format(epoch=epoch))
+      readable_epoch = f'{epoch:_}'
+      self.model.save(filepath.format(epoch=readable_epoch))
 
   # Here, the model itself is after the epoch's updates.
   # If you evaluate this model, you get the loss of the weights after this epoch's updates.
