@@ -29,8 +29,8 @@ Run the game AI in Google Colab:
 ```sh
 !git clone https://github.com/Habimm/othello.git
 %cd othello/
-!git checkout main
-!git reset --hard origin/main
+!git checkout mcts_without_ray
+!git reset --hard origin/mcts_without_ray
 !git pull
 
 env_var_commands = !python config.py | awk '{print "env", $3 "=" $4}'

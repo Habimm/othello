@@ -7,7 +7,7 @@ environment_variables = {
   # Increase this to incentivize using explorative actions
   'c_puct': (4, int),
 
-  'epochs': (100, int),
+  'epochs': (10_000, int),
   'num_epochs_per_checkpoint': (100, int),
   'num_games_for_supervised_training': (10, int),
 
