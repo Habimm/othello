@@ -50,13 +50,16 @@ OUTPUT_PATH = get_env_variable('OTHELLO_OUTPUT_PATH')
 
 class Node:
 
-  def __init__(self, model_load_path, state_to_be, parent=None, move=None):
+  def __init__(self, model_load_path, state_to_be, parent=None, move=None, model=None):
     self.state = rules.othello.Othello()
     self.state.board = copy.deepcopy(state_to_be.board)
     self.state.current_player = copy.deepcopy(state_to_be.current_player)
     self.state.num_tiles = copy.deepcopy(state_to_be.num_tiles)
 
-    self.model = tensorflow.keras.models.load_model(model_load_path, compile=False)
+    if model is None:
+      self.model = tensorflow.keras.models.load_model(model_load_path, compile=False)
+    else:
+      self.model = model
     self.model_load_path = model_load_path
     self.accumulated_relative_outcome = 0
     self.visits = 0
@@ -96,7 +99,13 @@ class Node:
         # then this next state is a final state of the game.
         # In this case, the Node() constructor will set self.is_final to True.
 
-      child = Node(self.model_load_path, next_state, self, move)
+      child = Node(
+        model_load_path=self.model_load_path,
+        state_to_be=next_state,
+        parent=self,
+        move=move,
+        model=self.model,
+      )
       self.children.append(child)
 
     number_of_children = len(self.children)
