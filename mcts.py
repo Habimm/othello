@@ -1,3 +1,4 @@
+import _othello_environment
 import copy
 import json
 import math
@@ -9,13 +10,6 @@ import rules.othello
 import sys
 import tensorflow
 import variables_info
-
-def get_env_variable(name):
-  value = os.environ.get(name)
-  if value is None:
-    print(f'Error: Environment variable {name} not set.')
-    sys.exit(1)
-  return value
 
 def board_to_tensor(board, player):
   # initialize the new lists with zeros
@@ -43,10 +37,10 @@ def board_to_tensor(board, player):
 
   return board_hwc
 
-C_PUCT = int(get_env_variable('OTHELLO_C_PUCT'))
-NUM_SIMULATIONS = int(get_env_variable('OTHELLO_NUM_SIMULATIONS'))
-OTHELLO_ORACLE_URL = get_env_variable('OTHELLO_ORACLE_URL')
-OUTPUT_PATH = get_env_variable('OTHELLO_OUTPUT_PATH')
+C_PUCT = _othello_environment.parameter('OTHELLO_C_PUCT')
+NUM_SIMULATIONS = _othello_environment.parameter('OTHELLO_NUM_SIMULATIONS')
+OTHELLO_ORACLE_URL = _othello_environment.parameter('OTHELLO_ORACLE_URL')
+OUTPUT_PATH = _othello_environment.parameter('OTHELLO_OUTPUT_PATH')
 
 class Node:
 

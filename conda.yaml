@@ -13,6 +13,7 @@ dependencies:
     - pandas==2.0.3
     - plotly==5.16.1
     - psutil==5.9.5
+    - python-dotenv==1.0.0
     - ray==2.6.3
     - ray[serve]
     - redis==5.0.0

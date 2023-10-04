@@ -1,3 +1,4 @@
+import _othello_environment
 import json
 import numpy
 import os
@@ -9,14 +10,7 @@ import tensorflow
 import time
 import typing
 
-def get_env_variable(name):
-  value = os.environ.get(name)
-  if value is None:
-    print(f'Error: Environment variable {name} not set.')
-    sys.exit(1)
-  return value
-
-OUTPUT_PATH = get_env_variable('OTHELLO_OUTPUT_PATH')
+OUTPUT_PATH = _othello_environment.parameter('OTHELLO_OUTPUT_PATH')
 
 @ray.serve.deployment(route_prefix='/predict')
 class OracleDeployment:

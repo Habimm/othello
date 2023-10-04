@@ -1,3 +1,4 @@
+import _othello_environment
 from info import info
 import json
 import numpy
@@ -8,14 +9,7 @@ import plotly.io as pio
 import re
 import sys
 
-def get_env_variable(name):
-    value = os.environ.get(name)
-    if value is None:
-        print(f"Error: Environment variable {name} not set.")
-        sys.exit(1)
-    return value
-
-output_path = get_env_variable('OTHELLO_OUTPUT_PATH')
+output_path = _othello_environment.parameter('OTHELLO_OUTPUT_PATH')
 
 
 

@@ -1,3 +1,4 @@
+import _othello_environment
 import ast
 import comet_ml
 import json
@@ -21,18 +22,11 @@ experiment = comet_ml.Experiment(
 # Metrics from this training run will now be
 # available in the Comet UI
 
-def get_env_variable(name):
-    value = os.environ.get(name)
-    if value is None:
-        print(f"Error: Environment variable {name} not set.")
-        sys.exit(1)
-    return value
-
-batch_size = int(get_env_variable('OTHELLO_BATCH_SIZE'))
-epochs = int(get_env_variable('OTHELLO_EPOCHS'))
-output_path = get_env_variable('OTHELLO_OUTPUT_PATH')
-num_epochs_per_checkpoint = int(get_env_variable('OTHELLO_NUM_EPOCHS_PER_CHECKPOINT'))
-random_seed = int(get_env_variable('OTHELLO_RANDOM_SEED'))
+batch_size = _othello_environment.parameter('OTHELLO_BATCH_SIZE')
+epochs = _othello_environment.parameter('OTHELLO_EPOCHS')
+output_path = _othello_environment.parameter('OTHELLO_OUTPUT_PATH')
+num_epochs_per_checkpoint = _othello_environment.parameter('OTHELLO_NUM_EPOCHS_PER_CHECKPOINT')
+random_seed = _othello_environment.parameter('OTHELLO_RANDOM_SEED')
 
 
 
