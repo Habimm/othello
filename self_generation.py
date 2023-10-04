@@ -116,15 +116,12 @@ def get_files_from_directory(directory):
 
 if __name__ == '__main__':
   random.seed(1)
-  models_directory = f'{OUTPUT_PATH}/models/eOthello-1/'
-  model_load_paths = get_files_from_directory(models_directory)
+  models_directory = f'{OUTPUT_PATH}/models/eOthello-1'
+  model_load_paths = ['/content/othello/output/20230828091759/models/eOthello-11/10_000']
   model_load_paths.sort()
   play_directory = models_directory.replace('models', 'selfplay', 1)
   os.makedirs(play_directory, exist_ok=True)
   os.makedirs(f'{OUTPUT_PATH}/mcts', exist_ok=True)
-
-  directory_path = f'{OUTPUT_PATH}/models/eOthello-1/'
-  model_load_paths = get_files_from_directory(directory_path)
 
   job_queue = multiprocessing.Queue()
   same_model_for_many_games = model_load_paths * NUMBER_OF_GAMES

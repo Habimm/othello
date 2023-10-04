@@ -37,12 +37,11 @@ env_var_commands = !python config.py | awk '{print "env", $3 "=" $4}'
 for line in env_var_commands:
   get_ipython().run_line_magic(*line.strip().split(' ', 1))
 
-!cat conda.yaml | awk '/pip:/ {flag=1; next} flag' | grep -E '^[[:space:]]+- ' | sed 's/^[[:space:]]*- //' > requirements.txt
-
 # If you use `python -m venv` instead of `virtualenv` here,
 # then you might get an error message related to `ensurepip`.
 !python -m pip install virtualenv
 !virtualenv .virtualenv_environment
+!cat conda.yaml | awk '/pip:/ {flag=1; next} flag' | grep -E '^[[:space:]]+- ' | sed 's/^[[:space:]]*- //' > requirements.txt
 !. .virtualenv_environment/bin/activate && pip install -r requirements.txt
 !. .virtualenv_environment/bin/activate && python decompose_games.py
 !. .virtualenv_environment/bin/activate && python train.py
