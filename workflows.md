@@ -1,7 +1,3 @@
-
-
-
-
 ```sh
 chmod u+x RUN
 chmod u+x INSTALL
@@ -25,17 +21,14 @@ npm init @eslint/config
 ./node_modules/.bin/eslint --fix j.js
 ```
 
+```sh
+!git pull
+```
+
 Run the game AI in Google Colab:
 ```sh
-!git clone https://github.com/Habimm/othello.git
+!git clone -b mcts_without_ray --single-branch https://github.com/Habimm/othello.git
 %cd othello/
-!git checkout mcts_without_ray
-!git reset --hard origin/mcts_without_ray
-!git pull
-
-env_var_commands = !python config.py | awk '{print "env", $3 "=" $4}'
-for line in env_var_commands:
-  get_ipython().run_line_magic(*line.strip().split(' ', 1))
 
 # If you use `python -m venv` instead of `virtualenv` here,
 # then you might get an error message related to `ensurepip`.
