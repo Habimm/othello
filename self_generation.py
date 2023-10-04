@@ -12,6 +12,7 @@ import subprocess
 import time
 import variables_info
 
+GENERATOR_PATH = _othello_environment.parameter('OTHELLO_GENERATOR_PATH')
 NUM_PROCESSES = _othello_environment.parameter('OTHELLO_NUM_PROCESSES')
 NUMBER_OF_GAMES = _othello_environment.parameter('OTHELLO_NUMBER_OF_GAMES')
 OUTPUT_PATH = _othello_environment.parameter('OTHELLO_OUTPUT_PATH')
@@ -25,7 +26,7 @@ def index_to_number(index):
 def convert_index_to_chess_notation(index_tuple):
   return index_to_letter(index_tuple[1]) + str(index_to_number(index_tuple[0]))
 
-def play_game(model_load_path):
+def play_game_against_yourself(model_load_path):
   game = rules.othello.Othello(should_draw_tiles=False)
   game.draw_board()
   game.initialize_board()
@@ -44,7 +45,6 @@ def play_game(model_load_path):
       move = game.make_exploratory_move_with_mcts(current_root)
       current_root = current_root.next_node(move, game.current_player)
       assert move is not None
-      print(move)
       moves.append(move)
     else:
       if other_player_has_a_move is False:
@@ -87,10 +87,9 @@ def play_game(model_load_path):
 def worker(job_queue):
   while True:
     model_load_path = job_queue.get()
-    if model_load_path is None:
-      return
+    if model_load_path is None: return
 
-    variables_info.d(model_load_path)
+    black_outcome, moves, timestamp = play_game_against_yourself(model_load_path)
 
     # The ", 1" is there to protect the model's name to not be changed (in case, the name contains "models").
     play_path = model_load_path.replace('models', 'selfplay', 1)
@@ -101,15 +100,12 @@ def worker(job_queue):
       with open(play_path, 'w') as random_evaluation_file:
         print('evaluation_game_id,model_load_path,baseline,black_outcome,game_moves', file=random_evaluation_file)
 
-    black_outcome, moves, timestamp = play_game(model_load_path)
-
     translated_moves = [convert_index_to_chess_notation(move) for move in moves]
     moves_concatenation = ''.join(translated_moves).lower()
 
     row = f'{timestamp},{model_load_path},RANDOM_PLAYER,{black_outcome},{moves_concatenation}'
     with open(play_path, 'a') as random_evaluation_file:
       print(row, file=random_evaluation_file)
-      print(f'Written row to {play_path}.')
 
 def get_files_from_directory(directory):
   return [os.path.join(directory, f) for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
@@ -117,7 +113,7 @@ def get_files_from_directory(directory):
 if __name__ == '__main__':
   random.seed(1)
   models_directory = f'{OUTPUT_PATH}/models/eOthello-1'
-  model_load_paths = ['output/20230828091759/models/eOthello-1/0.keras']
+  model_load_paths = [f'{GENERATOR_PATH}']
   model_load_paths.sort()
   play_directory = models_directory.replace('models', 'selfplay', 1)
   os.makedirs(play_directory, exist_ok=True)
