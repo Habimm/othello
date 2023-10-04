@@ -117,7 +117,7 @@ def get_files_from_directory(directory):
 if __name__ == '__main__':
   random.seed(1)
   models_directory = f'{OUTPUT_PATH}/models/eOthello-1'
-  model_load_paths = ['/content/othello/output/20230828091759/models/eOthello-11/10_000']
+  model_load_paths = ['output/20230828091759/models/eOthello-1/0.keras']
   model_load_paths.sort()
   play_directory = models_directory.replace('models', 'selfplay', 1)
   os.makedirs(play_directory, exist_ok=True)
