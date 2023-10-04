@@ -38,7 +38,6 @@ Run the game AI in Google Colab:
 !. .virtualenv_environment/bin/activate && pip install -r requirements.txt
 !. .virtualenv_environment/bin/activate && python decompose_games.py
 !. .virtualenv_environment/bin/activate && python train.py
-!. .virtualenv_environment/bin/activate && python oracle.py
 !. .virtualenv_environment/bin/activate && python play_against_random.py
 !. .virtualenv_environment/bin/activate && python self_generation.py
 
