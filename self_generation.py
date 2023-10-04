@@ -1,4 +1,4 @@
-import config
+import _othello_environment
 import csv
 import datetime
 import graphviz
@@ -12,9 +12,9 @@ import subprocess
 import time
 import variables_info
 
-NUM_PROCESSES = config.env('num_processes')
-NUMBER_OF_GAMES = config.env('number_of_games')
-OUTPUT_PATH = config.env('output_path')
+NUM_PROCESSES = _othello_environment.parameter('OTHELLO_NUM_PROCESSES')
+NUMBER_OF_GAMES = _othello_environment.parameter('OTHELLO_NUMBER_OF_GAMES')
+OUTPUT_PATH = _othello_environment.parameter('OTHELLO_OUTPUT_PATH')
 
 def index_to_letter(index):
   return chr(index + ord('a')).upper()

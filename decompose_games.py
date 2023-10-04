@@ -1,11 +1,12 @@
+import _othello_environment
 import config
 import json
 import os
 import pandas
 import rules.othello
 
-num_games_for_supervised_training = config.env('num_games_for_supervised_training')
-output_path = config.env('output_path')
+num_games_for_supervised_training = _othello_environment.parameter('OTHELLO_NUM_GAMES_FOR_SUPERVISED_TRAINING')
+output_path = _othello_environment.parameter('OTHELLO_OUTPUT_PATH')
 
 def decode_moves(moves):
   # split into pairs
