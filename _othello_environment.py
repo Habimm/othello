@@ -2,16 +2,9 @@ import datetime
 import dotenv
 import os
 
-# Load and transform environment parameters.
+# Load environment parameters.
 # =================================================================================
 dotenv.load_dotenv()
-
-for key, value in os.environ.items():
-  if key.startswith("OTHELLO"):
-    if "{now}" in value:
-      formatted_now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-      value = value.replace("{now}", formatted_now)
-      os.environ[key] = value
 # =================================================================================
 
 environment_variable_types = {
@@ -30,9 +23,12 @@ environment_variable_types = {
 }
 
 def parameter(environment_variable_name):
-  value = os.environ.get(environment_variable_name)
+  if environment_variable_name not in os.environ and environment_variable_name == 'OTHELLO_OUTPUT_PATH':
+    formatted_now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    value = f'output/{formatted_now}'
+  else:
+    value = os.environ.get(environment_variable_name)
   assert value is not None, f'Error: Environment variable {environment_variable_name} not set.'
   value_type = environment_variable_types[environment_variable_name]
   value = value_type(value)
   return value
-
