@@ -88,7 +88,12 @@ class Node:
         # then this next state is a final state of the game.
         # In this case, the Node() constructor will set self.is_final to True.
 
-      child = Node(self.model_load_path, next_state, self, move)
+      child = Node(
+        model_load_path=self.model_load_path,
+        state_to_be=next_state,
+        parent=self,
+        move=move,
+      )
       self.children.append(child)
 
     number_of_children = len(self.children)

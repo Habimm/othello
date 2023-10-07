@@ -1,5 +1,4 @@
 import _othello_environment
-import config
 import csv
 import datetime
 import graphviz

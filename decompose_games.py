@@ -1,5 +1,4 @@
 import _othello_environment
-import config
 import json
 import os
 import pandas

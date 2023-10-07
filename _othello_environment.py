@@ -2,7 +2,8 @@ import datetime
 import dotenv
 import os
 
-# Load .env file
+# Load and transform environment parameters.
+# =================================================================================
 dotenv.load_dotenv()
 
 for key, value in os.environ.items():
@@ -11,11 +12,13 @@ for key, value in os.environ.items():
       formatted_now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
       value = value.replace("{now}", formatted_now)
       os.environ[key] = value
+# =================================================================================
 
 environment_variable_types = {
   'OTHELLO_BATCH_SIZE': int,
   'OTHELLO_C_PUCT': int,
   'OTHELLO_EPOCHS': int,
+  'OTHELLO_GENERATOR_PATH': str,
   'OTHELLO_NUM_EPOCHS_PER_CHECKPOINT': int,
   'OTHELLO_NUM_GAMES_FOR_SUPERVISED_TRAINING': int,
   'OTHELLO_NUM_PROCESSES': int,
