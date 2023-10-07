@@ -21,7 +21,7 @@ def decode_moves(moves):
   return tuples
 
 games = []
-with open('data/othello_dataset.csv') as othello_dataset_file:
+with open(f'{output_path}/selfplay/eOthello-1/100.keras.csv') as othello_dataset_file:
   othello_dataset_file.readline()
   i = 0
   for line in othello_dataset_file:
@@ -32,8 +32,9 @@ with open('data/othello_dataset.csv') as othello_dataset_file:
     line = line.split(',')
     game = {
       'name': line[0],
-      'black_outcome': int(line[1]),
-      'moves': line[2],
+      'model': line[1],
+      'black_outcome': int(line[2]),
+      'moves': line[3],
     }
     games.append(game)
 
@@ -104,8 +105,8 @@ for game in games:
 othello_actions_dataframe = pandas.DataFrame(othello_actions)
 othello_actions_dataframe.set_index(['Game', 'Step'], inplace=True)
 
-os.makedirs(output_path, exist_ok=True)
-othello_actions_dataframe.to_csv(f'{output_path}/othello_prediction_prompts.csv', sep=';')
+os.makedirs(f'{output_path}/prediction_prompts', exist_ok=True)
+othello_actions_dataframe.to_csv(f'{output_path}/prediction_prompts/100.keras.csv', sep=';')
 
 # Data to be written to the JSON file
 data = {

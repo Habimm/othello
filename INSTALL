@@ -3,6 +3,7 @@
 true
 
 # Install Anaconda3
+# ===============================================================================================
 # rm -rf $HOME/anaconda3
 # wget -O Anaconda3.sh https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
 # chmod +x Anaconda3.sh
@@ -14,6 +15,7 @@ true
 # IMPORTANT: You may need to close and restart your shell after running 'conda init'.
 # Ctrl+D
 # fish
+# ===============================================================================================
 
 and conda activate base
 and rm -rf ./.conda_environment

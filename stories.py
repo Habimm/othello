@@ -1,5 +1,4 @@
 import _othello_environment
-from info import info
 import json
 import numpy
 import os
@@ -8,6 +7,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import re
 import sys
+import variables_info
 
 output_path = _othello_environment.parameter('OTHELLO_OUTPUT_PATH')
 
@@ -83,7 +83,7 @@ tournament_table['epoch'] = tournament_table['play_path'].apply(lambda x: int(re
 tournament_table['percentage'] = tournament_table['number_of_wins'] / tournament_table['number_of_games']
 
 checkpoint_epochs = tournament_table['epoch'].tolist()
-info(checkpoint_epochs)
+variables_info.d(checkpoint_epochs)
 
 # Read the data from the CSV file
 training_table = pd.read_csv(f'{output_path}/training_history.csv')
@@ -110,8 +110,8 @@ assert all(epoch in tournament_table['epoch'].values for epoch in checkpoint_epo
 bar_y_values = [tournament_table.loc[tournament_table['epoch'] == num_epochs, 'percentage'].iloc[0] for num_epochs in checkpoint_epochs]
 bigger = numpy.array(bar_y_values)*100
 
-info(checkpoint_epochs)
-info(bar_y_values)
+variables_info.d(checkpoint_epochs)
+variables_info.d(bar_y_values)
 
 # Add the bar plot for Winning Rate
 fig.add_trace(

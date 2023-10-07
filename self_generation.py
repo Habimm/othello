@@ -98,12 +98,12 @@ def worker(job_queue):
     # If the file does not exist yet, create one and put the headers in there.
     if not os.path.exists(play_path):
       with open(play_path, 'w') as random_evaluation_file:
-        print('evaluation_game_id,model_load_path,baseline,black_outcome,game_moves', file=random_evaluation_file)
+        print('game_id,model_load_path,black_outcome,game_moves', file=random_evaluation_file)
 
     translated_moves = [convert_index_to_chess_notation(move) for move in moves]
     moves_concatenation = ''.join(translated_moves).lower()
 
-    row = f'{timestamp},{model_load_path},RANDOM_PLAYER,{black_outcome},{moves_concatenation}'
+    row = f'{timestamp},{model_load_path},{black_outcome},{moves_concatenation}'
     with open(play_path, 'a') as random_evaluation_file:
       print(row, file=random_evaluation_file)
 

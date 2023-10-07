@@ -32,7 +32,7 @@ random_seed = _othello_environment.parameter('OTHELLO_RANDOM_SEED')
 
 # Load the decomposed games data.
 othello_actions_dataframe = pandas.read_csv(
-  f'{output_path}/othello_prediction_prompts.csv',
+  f'{output_path}/prediction_prompts/100.keras.csv',
   sep=';',
   index_col=['Game', 'Step'],
 )
