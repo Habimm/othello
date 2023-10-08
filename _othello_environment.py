@@ -5,6 +5,11 @@ import os
 # Load environment parameters.
 # =================================================================================
 dotenv.load_dotenv()
+
+OTHELLO_OUTPUT_PATH = None
+if 'OTHELLO_OUTPUT_PATH' not in os.environ:
+  formatted_now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+  OTHELLO_OUTPUT_PATH = f'output/{formatted_now}'
 # =================================================================================
 
 environment_variable_types = {
@@ -16,6 +21,7 @@ environment_variable_types = {
   'OTHELLO_NUM_GAMES_FOR_SUPERVISED_TRAINING': int,
   'OTHELLO_NUM_PROCESSES': int,
   'OTHELLO_NUM_SIMULATIONS': int,
+  'OTHELLO_NUM_STEPS_PER_CHECKPOINT': int,
   'OTHELLO_NUMBER_OF_GAMES': int,
   'OTHELLO_ORACLE_URL': str,
   'OTHELLO_OUTPUT_PATH': str,
@@ -23,9 +29,8 @@ environment_variable_types = {
 }
 
 def parameter(environment_variable_name):
-  if environment_variable_name not in os.environ and environment_variable_name == 'OTHELLO_OUTPUT_PATH':
-    formatted_now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    value = f'output/{formatted_now}'
+  if OTHELLO_OUTPUT_PATH is not None and environment_variable_name == 'OTHELLO_OUTPUT_PATH':
+    value = OTHELLO_OUTPUT_PATH
   else:
     value = os.environ.get(environment_variable_name)
   assert value is not None, f'Error: Environment variable {environment_variable_name} not set.'

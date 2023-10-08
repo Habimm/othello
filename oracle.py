@@ -9,8 +9,9 @@ import sys
 import tensorflow
 import time
 import typing
+import variables_info
 
-OUTPUT_PATH = _othello_environment.parameter('OTHELLO_OUTPUT_PATH')
+GENERATOR_PATH = _othello_environment.parameter('OTHELLO_GENERATOR_PATH')
 
 @ray.serve.deployment(route_prefix='/predict')
 class OracleDeployment:
@@ -41,6 +42,9 @@ class OracleDeployment:
         assert cached_prediction.shape == (1, 1), 'Assertion failed: cached_prediction.shape == (1, 1)'
         return {'exception': None, 'prediction': cached_prediction}
 
+      if model_load_path not in self.oracles:
+        self.oracles[model_load_path] = tensorflow.keras.models.load_model(model_load_path)
+
       assert model_load_path in self.oracles, 'Assertion failed: model_load_path in self.oracles'
       prediction = self.oracles[model_load_path].predict([board], verbose=0)
 
@@ -56,20 +60,21 @@ class OracleDeployment:
         'exception': f'{e}',
       }
 
-def get_files_from_directory(directory):
-  return [os.path.join(directory, f) for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+def oracle(model_name):
+  app = OracleDeployment.bind(model_load_paths=[GENERATOR_PATH])
 
-models_directory = f'{OUTPUT_PATH}/models/eOthello-1/'
-model_load_paths = get_files_from_directory(models_directory)
-app = OracleDeployment.bind(model_load_paths=model_load_paths)
+  # Deploy the application locally.
+  ray.serve.run(app)
+  ray.serve.run(OracleDeployment.options(num_replicas=1).bind(model_load_paths=[GENERATOR_PATH]))
 
-# Deploy the application locally.
-ray.serve.run(app)
-ray.serve.run(OracleDeployment.options(num_replicas=8).bind(model_load_paths=model_load_paths))
+if __name__ == '__main__':
+  oracle(
+    model_name = 'eOthello-1',
+  )
 
-# This will keep the script running indefinitely
-try:
-  while True:
-    time.sleep(1)
-except KeyboardInterrupt:
-  print('Shutting down...')
+  # This will keep the script running indefinitely
+  try:
+    while True:
+      time.sleep(1)
+  except KeyboardInterrupt:
+    print('Shutting down...')

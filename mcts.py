@@ -2,7 +2,6 @@ import _othello_environment
 import copy
 import json
 import math
-import multiprocessing
 import numpy
 import os
 import requests
