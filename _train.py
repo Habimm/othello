@@ -61,6 +61,7 @@ def train(prediction_prompts_path, models_path):
     data = {}
 
   # Add the new key-value pair
+  data['plays_path'] = prediction_prompts_path
   data['training_epochs'] = epochs
   data['training_batch_size_per_step'] = batch_size
   data['num_steps_per_checkpoint'] = num_steps_per_checkpoint

@@ -17,21 +17,27 @@ def decode_moves(moves):
   tuples = [(move_number + 1, move_alpha, decode_move(move_alpha)) for move_number, move_alpha in enumerate(move_pairs)]
   return tuples
 
-def decompose(source_path, target_path, trajectories_path):
+def decompose(source_path, target_path, trajectories_path = None):
   num_games_for_supervised_training = _othello_environment.parameter('OTHELLO_NUM_GAMES_FOR_SUPERVISED_TRAINING')
   output_path = _othello_environment.parameter('OTHELLO_OUTPUT_PATH')
 
   games = []
   with open(source_path) as othello_dataset_file:
     line = othello_dataset_file.readline()
-    with open(trajectories_path, 'w') as trajectories_file:
-      print(line, file=trajectories_file, end='')
+
+    if trajectories_path is not None:
+      with open(trajectories_path, 'w') as trajectories_file:
+        print(line, file=trajectories_file, end='')
+
     i = 0
     for line in othello_dataset_file:
       i += 1
       if i > num_games_for_supervised_training: break
-      with open(trajectories_path, 'a') as trajectories_file:
-        print(line, file=trajectories_file, end='')
+
+      if trajectories_path is not None:
+        with open(trajectories_path, 'a') as trajectories_file:
+          print(line, file=trajectories_file, end='')
+
       # Remove the newline character at the end
       line = line.strip()
       line = line.split(',')
