@@ -22,7 +22,7 @@ OUTPUT_PATH = _othello_environment.parameter('OTHELLO_OUTPUT_PATH')
 # ===================================================================================
 
 last_filepath = None
-for generation in range(4):
+for generation in range(6):
 
   os.makedirs(f'{OUTPUT_PATH}/{generation}/plays', exist_ok=True)
   os.makedirs(f'{OUTPUT_PATH}/{generation}/models', exist_ok=True)
