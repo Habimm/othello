@@ -15,7 +15,7 @@ import tensorflow.keras.layers
 def train(prediction_prompts_path, models_path):
   experiment = comet_ml.Experiment(
       api_key="naHPlykXz5yy1LscJvnkLiyBJ",
-      project_name='eOthello-1',
+      project_name='OthelloModel',
   )
 
   # Metrics from this training run will now be
@@ -39,11 +39,11 @@ def train(prediction_prompts_path, models_path):
   tensorflow.random.set_seed(random_seed)
 
   # Define the oracle neural network's architecture
-  inputs = tensorflow.keras.Input(shape=(8, 8, 2))
-  x = tensorflow.keras.layers.Conv2D(32, (3, 3), activation='relu', data_format='channels_last')(inputs)
-  x = tensorflow.keras.layers.Flatten()(x)
-  outputs = tensorflow.keras.layers.Dense(1, activation='tanh')(x)
-  model = tensorflow.keras.Model(inputs=inputs, outputs=outputs)
+  inputs = tensorflow.keras.Input(name='OthelloBoard', shape=(8, 8, 2))
+  x = tensorflow.keras.layers.Conv2D(32, (3, 3), activation='relu', data_format='channels_last', name='OthelloFilters')(inputs)
+  x = tensorflow.keras.layers.Flatten(name='OthelloFlatten')(x)
+  outputs = tensorflow.keras.layers.Dense(1, activation='tanh', name='OthelloDense')(x)
+  model = tensorflow.keras.Model(inputs=inputs, outputs=outputs, name="OthelloModel")
   model.summary()
   model.compile(optimizer='adam', loss='mean_squared_error', metrics=[tensorflow.keras.metrics.MeanAbsoluteError()])
   filepath = f'{models_path}/batches_{{batches}}.keras'
