@@ -2,3 +2,4 @@
 .env
 NBoard
 output*
+ui/vendor/
