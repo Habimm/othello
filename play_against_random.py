@@ -45,6 +45,7 @@ def play_game(model_load_path):
       if game.current_player == 0: # == BLACK PLAYER
         # BLACK is random
         move = game.make_random_move()
+        variables_info.d(move)
         current_root = current_root.next_node(move, game.current_player)
       if game.current_player == 1: # == WHITE PLAYER
         # WHITE is trained
@@ -98,8 +99,6 @@ def worker(job_queue):
     if model_load_path is None:
       return
 
-    variables_info.d(model_load_path)
-
     # The ", 1" is there to protect the model's name to not be changed (in case, the name contains "models").
     play_path = model_load_path.replace('models', 'plays', 1)
     play_path = f'{play_path}.csv'
@@ -127,15 +126,10 @@ def get_files_from_directory(directory):
 
 if __name__ == '__main__':
   random.seed(1)
-  models_directory = f'{OUTPUT_PATH}/models/eOthello-1/'
-  model_load_paths = get_files_from_directory(models_directory)
-  model_load_paths.sort()
-  play_directory = models_directory.replace('models', 'plays', 1)
-  os.makedirs(play_directory, exist_ok=True)
   os.makedirs(f'{OUTPUT_PATH}/mcts', exist_ok=True)
 
   directory_path = f'{OUTPUT_PATH}/models/eOthello-1/'
-  model_load_paths = get_files_from_directory(directory_path)
+  model_load_paths = ["output/11111111111111111/0/models/batches_1_000.keras"]
 
   job_queue = multiprocessing.Queue()
   same_model_for_many_games = model_load_paths * NUMBER_OF_GAMES
@@ -155,20 +149,3 @@ if __name__ == '__main__':
 
   for p in processes:
     p.join()
-
-  winning_rates_csv_path = f'{OUTPUT_PATH}/winning_rates.csv'
-  with open(winning_rates_csv_path, 'w', newline='') as csvfile:
-    writer = csv.writer(csvfile)
-    writer.writerow(['play_path', 'number_of_wins', 'number_of_games'])
-
-  play_paths = get_files_from_directory(play_directory)
-  for play_path in play_paths:
-    plays_table = pandas.read_csv(play_path)
-    # The oracle-led player controls White.
-    number_of_wins = plays_table[plays_table['black_outcome'] == -1].shape[0]
-    with open(winning_rates_csv_path, 'a', newline='') as csvfile:
-      writer = csv.writer(csvfile)
-      # actual_number_of_games might differ from NUMBER_OF_GAMES,
-      # if the plays directory wasn't empty, when the script ran.
-      actual_number_of_games = plays_table.shape[0]
-      writer.writerow([play_path, number_of_wins, actual_number_of_games])
