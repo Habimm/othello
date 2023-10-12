@@ -1,0 +1,139 @@
+#main.container
+{
+  text-align: center;
+}
+
+.disabled
+{
+  opacity: 0.5;
+}
+
+#message
+{
+  margin-top: 1em;
+}
+
+#preference-pane
+{
+  margin-top: 2em;
+}
+
+#player-type-forms
+{
+  display: inline-block;
+}
+#black-player-level,
+#white-player-level
+{
+  width: auto;
+}
+#swap-player-types-button
+{
+  position: relative;
+  top: -2em;
+}
+
+#add-new-ai-button
+{
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+
+
+
+
+/* CSS Variables */
+:root {
+    --board-size: min(90vw, 90vh);   /* 90% of the smallest between viewport width and height */
+    --cell-size: calc(var(--board-size) / 8);  /* Divide by the number of cells */
+    --disc-size: calc(var(--cell-size) * 0.875);  /* 87.5% of cell size for the disc */
+    --disc-radius: calc(var(--disc-size) / 2);
+    --cell-margin: calc((var(--cell-size) - var(--disc-size)) / 2);
+    --label-font-size: calc(var(--cell-size) * 0.4);  /* Set the font size to be 50% of the cell size */
+    --label-padding: 0;   /* A fraction of the cell size for padding */
+}
+
+/* ... (your other styles) ... */
+
+#game-board > table th {
+    display: none;
+}
+
+
+
+#game-board > table
+{
+  margin: 0 auto;
+  width: var(--board-size);
+}
+
+#game-board > table th
+{
+  margin: 0;
+  padding: calc(var(--cell-size) * 0.05);  /* A fraction of the cell size for padding */
+  line-height: 100%;
+}
+
+#game-board > table .cell
+{
+  background: #090;
+  border: 1px solid #ccc;
+  padding: 0;
+  margin: 0;
+  line-height: 0;
+  width: var(--cell-size);
+  height: var(--cell-size);
+}
+
+#game-board > table .cell.attackable
+{
+  cursor: pointer;
+}
+
+#game-board > table .cell.attackable:hover
+{
+  background: #cc0;
+}
+
+#game-board > table .cell > .disc
+{
+  display: inline-block;
+  width: var(--disc-size);
+  height: var(--disc-size);
+  border-radius: var(--disc-radius);
+  margin: var(--cell-margin);
+}
+
+#game-board > table
+{
+  margin: 0 auto;
+  width: var(--board-size);
+}
+
+#game-board > table th
+{
+  margin: 0;
+  padding: var(--label-padding);
+  line-height: 100%;
+  font-size: var(--label-font-size);  /* Increased font size */
+  font-weight: bold;  /* Optional: to make the labels stand out more */
+}
+
+
+#game-board > table .cell.white > .disc
+{
+  background: #fff;
+}
+#game-board > table .cell.black > .disc
+{
+  background: #000;
+}
+#game-board > table .cell.attackable > .disc
+{
+  opacity: 0.2;
+}
+#game-board > table .cell.attackable:hover > .disc
+{
+  opacity: 1.0;
+}
