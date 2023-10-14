@@ -1,3 +1,26 @@
+/* Add these styles to your existing CSS file or create a new one */
+.flex-container {
+  display: flex;
+}
+
+.flex-item {
+  flex: 1;
+}
+
+.right-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-left: 20px; /* Adjust as needed for spacing between elements */
+  white-space: nowrap; /* Prevent elements from wrapping */
+}
+
+/* Adjust the width of the button */
+#start-button {
+  width: auto; /* Let the button's content determine its width */
+  min-width: 150px; /* Set a minimum width if necessary */
+}
+
 #main.container
 {
   text-align: center;
@@ -54,7 +77,15 @@
     --label-padding: 0;   /* A fraction of the cell size for padding */
 }
 
-/* ... (your other styles) ... */
+/* Add this to your existing CSS file or create a new one */
+#game-board {
+  margin-top: 20px; /* Adjust the margin-top value as needed */
+  border: 2px solid #333; /* Border style */
+  background-color: #0000FF; /* Background color */
+  padding: 15px; /* Padding around the game board */
+  border-radius: 10px; /* Rounded corners */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Add a shadow for depth */
+}
 
 #game-board > table th {
     display: none;

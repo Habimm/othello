@@ -223,10 +223,10 @@ var othello = {};
       n[board[i]]++;
 
     if (n[BLACK] > n[WHITE])
-      return 1;
+      return [1, n];
     if (n[BLACK] < n[WHITE])
-      return -1;
-    return 0;
+      return [-1, n];
+    return [0, n];
   }
 
   function nameMove(move) {

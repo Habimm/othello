@@ -45,8 +45,10 @@ def play_game(model_load_path):
       if game.current_player == 0: # == BLACK PLAYER
         # BLACK is random
         move = game.make_random_move()
+        variables_info.d(current_root)
         variables_info.d(move)
         current_root = current_root.next_node(move, game.current_player)
+        variables_info.d(current_root)
       if game.current_player == 1: # == WHITE PLAYER
         # WHITE is trained
         move = game.make_move_with_mcts(current_root)

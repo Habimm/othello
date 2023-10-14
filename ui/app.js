@@ -62,6 +62,10 @@
     } else {
     $('#cell_' + m.x + '_' + m.y)
     .click(function () {
+      console.log("The player just went:", [m.y, m.x]);
+
+      sendStateToServer([m.y, m.x]);
+
       shiftToNewGameTree(O.force(m.gameTreePromise));
     });
     }
@@ -94,41 +98,52 @@
   }
 
   function chooseMoveByAI(gameTree, ai) {
-    $('#message').text('Now thinking...');
-    setTimeout(
-      function () {
-        // Convert the current Othello state to the desired format
-        const formattedState = formatOthelloState(gameTree.board);
+      $('#message').text('Now thinking...');
 
-        // Sending the formatted Othello state to the server
-        sendStateToServer({ "Current Othello state": formattedState });
+      // Convert the current Othello state to the desired format
+      const formattedState = formatOthelloState(gameTree.board);
 
-        // Printing the formatted Othello board state
-        console.log("Current Othello state:", formattedState);
+      // Printing the formatted Othello board state
+      console.log("Current Othello state:", formattedState);
 
-        // Printing the list of legal moves
-        console.log("Legal moves:", gameTree.moves);
+      // Printing the list of legal moves
+      console.log("Legal moves:", gameTree.moves);
 
-        // Assertion: There must always be legal moves available
-        if (gameTree.moves.length === 0) {
+      // Assertion: There must always be legal moves available
+      if (gameTree.moves.length === 0) {
           throw new Error("Assertion failed: No legal moves available");
-        }
+      }
 
-        const firstMove = gameTree.moves[0];
-        console.log("First legal move:", [firstMove.x, firstMove.y]);
+      // Wait for 2 seconds (2000 milliseconds) before fetching the move from the server
+      setTimeout(() => {
+        fetch('http://127.0.0.1:5000/minotaurus_move', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const receivedMove = data;  // Assuming the server sends [y, x] format
+            console.log("Move received from server:", receivedMove);
 
-        // Fetch the Othello state if that move is taken
-        const newGameTree = O.force(firstMove.gameTreePromise);
+            const correspondingMove = gameTree.moves.find(m => m.x === receivedMove[1] && m.y === receivedMove[0]);
 
-        setTimeout(
-          function () {
-            shiftToNewGameTree(newGameTree);
-          },
-          Math.max(minimumDelayForAI - 0, 1)
-        );
-      },
-      1
-    );
+            if (!correspondingMove) {
+              throw new Error(`Received move from server (${receivedMove[0]}, ${receivedMove[1]}) is not a valid move! Available moves: ${JSON.stringify(gameTree.moves)}`);
+            }
+
+            const newGameTree = O.force(correspondingMove.gameTreePromise);
+
+            setTimeout(() => {
+                shiftToNewGameTree(newGameTree);
+            }, Math.max(minimumDelayForAI - 0, 1));
+
+        })
+        .catch(error => {
+            console.error("Error fetching move from server:", error);
+        });
+      }, 2000);
   }
 
   function formatOthelloState(state) {
@@ -151,12 +166,18 @@
   }
 
   function showWinner(board) {
-  var r = O.judge(board);
-  $('#message').text(
-    r === 0 ?
-    'The game ends in a draw.' :
-    'The winner is ' + (r === 1 ? O.BLACK : O.WHITE) + '.'
-  );
+    var [r, n] = O.judge(board);
+    var winnerMessage = '';
+
+    if (r === 0) {
+      winnerMessage = 'The game ends in a draw.';
+    } else {
+      var winnerColor = r === 1 ? 'Black' : 'White';
+      winnerMessage = 'The winner is ' + winnerColor + '.<br>';
+      winnerMessage += ' Black has ' + n[O.BLACK] + ' stones, and White has ' + n[O.WHITE] + ' stones.';
+    }
+
+    $('#message').html(winnerMessage);
   }
 
   var playerTable = {};
@@ -189,6 +210,7 @@
   function shiftToNewGameTree(gameTree) {
   drawGameBoard(gameTree.board, gameTree.player, gameTree.moves);
   resetUI();
+  showWinner(gameTree.board);
   if (gameTree.moves.length === 0) {
     showWinner(gameTree.board);
     recordStat(gameTree.board);
@@ -204,7 +226,7 @@
 
   function recordStat(board) {
   var s = stats[[blackPlayerType(), whitePlayerType()]] || {b: 0, w: 0, d: 0};
-  var r = O.judge(board);
+  var [r, n] = O.judge(board);
   if (r === 1)
     s.b++;
   if (r === 0)
